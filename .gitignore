@@ -1,0 +1,16 @@
+# Environment
+.env
+larapp/.env
+
+# Dependencies
+larapp/vendor/
+larapp/node_modules/
+
+# OS / Editor files
+.DS_Store
+.idea/
+.vscode/
+
+# npm logs
+npm-debug.log
+yarn-error.log
