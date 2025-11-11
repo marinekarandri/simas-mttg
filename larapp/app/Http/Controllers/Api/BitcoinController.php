@@ -6,32 +6,40 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\Controller;
 
+/**
+ * @OA\Info(
+ *   title="MTTG API",
+ *   version="1.0.0",
+ *   description="API documentation for mttg project",
+ *   @OA\Contact(email="dev@example.com")
+ * )
+ */
 class BitcoinController extends Controller
 {
-    /**
-     * Get current Bitcoin price in IDR
-     *
-     * @OA\Get(
-     *     path="/api/bitcoin-price",
-     *     tags={"Tes API"},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful response",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="ticker", type="object",
-     *                 @OA\Property(property="buy", type="string"),
-     *                 @OA\Property(property="high", type="string"),
-     *                 @OA\Property(property="last", type="string"),
-     *                 @OA\Property(property="low", type="string"),
-     *                 @OA\Property(property="sell", type="string"),
-     *                 @OA\Property(property="server_time", type="integer"),
-     *                 @OA\Property(property="vol_btc", type="string"),
-     *                 @OA\Property(property="vol_idr", type="string")
-     *             )
-     *         )
-     *     )
-     * )
-     */
+    // /**
+    //  * Get current Bitcoin price in IDR
+    //  *
+    //  * @OA\Get(
+    //      path="/api/bitcoin-price",
+    //      tags={"Z-Cryptocurrency"},
+    //      @OA\Response(
+    //          response=200,
+    //          description="Successful response",
+    //          @OA\JsonContent(
+    //              @OA\Property(property="ticker", type="object",
+    //                  @OA\Property(property="buy", type="string"),
+    //                  @OA\Property(property="high", type="string"),
+    //                  @OA\Property(property="last", type="string"),
+    //                  @OA\Property(property="low", type="string"),
+    //                  @OA\Property(property="sell", type="string"),
+    //                  @OA\Property(property="server_time", type="integer"),
+    //                  @OA\Property(property="vol_btc", type="string"),
+    //                  @OA\Property(property="vol_idr", type="string")
+    //              )
+    //          )
+    //      )
+    //  )
+    //  */
     public function getPrice()
     {
         // Ambil harga Bitcoin dari API eksternal (Indodax)

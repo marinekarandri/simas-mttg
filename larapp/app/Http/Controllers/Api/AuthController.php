@@ -13,7 +13,7 @@ class AuthController extends Controller
 {
     /**
      * @OA\Post(
-     *     path="/api/register",
+     *     path="/register",
      *     summary="Register a new user",
      *     @OA\RequestBody(
      *         required=true,
@@ -64,7 +64,7 @@ class AuthController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/login",
+     *     path="/login",
      *     summary="Login user",
      *     @OA\RequestBody(
      *         required=true,

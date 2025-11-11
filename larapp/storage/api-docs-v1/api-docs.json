@@ -9,10 +9,10 @@
         "version": "1.0.0"
     },
     "paths": {
-        "/register": {
+        "/api/register": {
             "post": {
                 "summary": "Register a new user",
-                "operationId": "5d4fa5d5607ed675ba93907e1fc94534",
+                "operationId": "8e4e3cb7b46126f4696379d3c7eeb4ad",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -75,10 +75,10 @@
                 }
             }
         },
-        "/login": {
+        "/api/login": {
             "post": {
                 "summary": "Login user",
-                "operationId": "67d6d0fdd54fba132e1b6f55ca254183",
+                "operationId": "222b2625838e3c57e017987f73598fda",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -130,13 +130,13 @@
                 }
             }
         },
-        "/greeting": {
+        "/api/greeting": {
             "post": {
                 "tags": [
                     "Greeting"
                 ],
                 "summary": "Respond to greeting",
-                "operationId": "0ad03fa392ff0ea6e63418066ba27eb3",
+                "operationId": "52b5ce7ef886a70b87cc29a392613c5d",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -163,6 +163,49 @@
                                         "response": {
                                             "type": "string",
                                             "example": "waalaikumsalam"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/greeting": {
+            "post": {
+                "tags": [
+                    "Greeting V2"
+                ],
+                "summary": "Respond to greeting V2",
+                "operationId": "e2e677352c68d70b0c9105c362bb8cfc",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "message": {
+                                        "type": "string",
+                                        "example": "assalamualaikum"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Greeting response V2",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "response": {
+                                            "type": "string",
+                                            "example": "Waalaikumsalam warahmatullahi wabarakatuh"
                                         }
                                     },
                                     "type": "object"
@@ -356,6 +399,10 @@
         {
             "name": "Greeting",
             "description": "Greeting"
+        },
+        {
+            "name": "Greeting V2",
+            "description": "Greeting V2"
         },
         {
             "name": "Prayer Times",
