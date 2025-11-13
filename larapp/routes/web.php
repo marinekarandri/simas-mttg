@@ -19,6 +19,8 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
 	// user management
 	Route::get('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])->name('admin.users');
 	Route::post('/users/{id}', [\App\Http\Controllers\Admin\UserManagementController::class, 'update'])->name('admin.users.update');
+    // Master regions CRUD
+    Route::resource('regions', \App\Http\Controllers\Admin\RegionController::class)->names('admin.regions');
 });
 
 Route::view('/', 'home');
