@@ -1,20 +1,17 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return redirect('/api/documentation');
-});
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Dashboard: hanya butuh autentikasi (auth). Verified biasanya memeriksa email/akun terverifikasi.
+// Provide explicit GET view route for login so front 'Login' link always loads the login form.
+// Fortify handles the POST /login authentication; this GET route maps to the Blade view.
+Route::view('/login', 'auth.login')->middleware('guest')->name('login');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
+Route::view('/dashboard', 'dashboard')->middleware('auth')->name('dashboard');
 
-require __DIR__.'/auth.php';
+Route::view('/', 'home');
+Route::view('/mosque', 'mosque');
+
+
+
