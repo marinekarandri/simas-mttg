@@ -14,8 +14,8 @@ class MosqueController extends Controller
         $q = $request->query('q');
         $query = Mosque::query();
         if ($q) $query->where('name', 'like', "%{$q}%");
-        $items = $query->orderBy('name')->paginate(20);
-        return view('admin.master.mosques.index', compact('items', 'q'));
+        $mosques = $query->orderBy('name')->paginate(20);
+        return view('admin.master.mosques.index', compact('mosques', 'q'));
     }
 
     public function create()
