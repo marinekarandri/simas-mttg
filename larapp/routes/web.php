@@ -16,6 +16,9 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('aut
 Route::middleware(['auth'])->prefix('admin')->group(function () {
 	Route::get('/pending-users', [UserApprovalController::class, 'index'])->name('admin.pending');
 	Route::post('/approve-user/{id}', [UserApprovalController::class, 'approve'])->name('admin.approve');
+	// user management
+	Route::get('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])->name('admin.users');
+	Route::post('/users/{id}', [\App\Http\Controllers\Admin\UserManagementController::class, 'update'])->name('admin.users.update');
 });
 
 Route::view('/', 'home');

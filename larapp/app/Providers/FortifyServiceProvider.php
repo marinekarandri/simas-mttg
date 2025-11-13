@@ -13,6 +13,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
 use Laravel\Fortify\Fortify;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -43,6 +45,30 @@ class FortifyServiceProvider extends ServiceProvider
 
         RateLimiter::for('two-factor', function (Request $request) {
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
+        });
+
+        // Custom authentication: prevent login if user is not approved
+        Fortify::authenticateUsing(function (Request $request) {
+            $username = $request->input(Fortify::username());
+            $password = $request->input('password');
+
+            $user = User::where(Fortify::username(), $username)->first();
+
+            if (! $user) {
+                return null;
+            }
+
+            if (! Hash::check($password, $user->password)) {
+                return null;
+            }
+
+            // Deny authentication for not-yet-approved users
+            if (! $user->approved) {
+                // return null to indicate authentication failed
+                return null;
+            }
+
+            return $user;
         });
     }
 }
