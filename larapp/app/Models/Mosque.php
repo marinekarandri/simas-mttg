@@ -23,6 +23,11 @@ class Mosque extends Model
         return $this->belongsTo(Regions::class, 'province_id');
     }
 
+    public function regional()
+    {
+        return $this->belongsTo(Regions::class, 'regional_id');
+    }
+
     public function city()
     {
         return $this->belongsTo(Regions::class, 'city_id');
@@ -31,6 +36,11 @@ class Mosque extends Model
     public function witel()
     {
         return $this->belongsTo(Regions::class, 'witel_id');
+    }
+
+    public function sto()
+    {
+        return $this->belongsTo(Regions::class, 'sto_id');
     }
 
     public function mosqueFacility()

@@ -20,8 +20,11 @@ class MosqueController extends Controller
 
     public function create()
     {
-        $provinces = Regions::where('type', 'PROVINCE')->orderBy('name')->get();
-        return view('admin.master.mosques.create', compact('provinces'));
+        // provide lists for hierarchical region selection
+        $regionals = Regions::where('level', 'REGIONAL')->orderBy('name')->get();
+        $witels = Regions::where('level', 'WITEL')->orderBy('name')->get();
+        $stos = Regions::where('level', 'STO')->orderBy('name')->get();
+        return view('admin.master.mosques.create', compact('regionals', 'witels', 'stos'));
     }
 
     public function store(Request $request)
@@ -29,9 +32,15 @@ class MosqueController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'nullable|string|max:100',
-            'type' => 'nullable|string|max:50',
+            'type' => 'nullable|string|in:MASJID,MUSHOLLA',
             'address' => 'nullable|string',
-            'province_id' => 'nullable|exists:regions,id',
+            'tahun_didirikan' => 'nullable|integer|min:1800|max:2100',
+            'jml_bkm' => 'nullable|integer|min:0',
+            'luas_tanah' => 'nullable|numeric|min:0',
+            'daya_tampung' => 'nullable|integer|min:0',
+            'regional_id' => 'nullable|exists:regions,id',
+            'witel_id' => 'nullable|exists:regions,id',
+            'sto_id' => 'nullable|exists:regions,id',
         ]);
         Mosque::create($data);
         return redirect()->route('admin.mosques.index')->with('success', 'Mosque created');
@@ -39,8 +48,10 @@ class MosqueController extends Controller
 
     public function edit(Mosque $mosque)
     {
-        $provinces = Regions::where('type', 'PROVINCE')->orderBy('name')->get();
-        return view('admin.master.mosques.edit', compact('mosque', 'provinces'));
+        $regionals = Regions::where('level', 'REGIONAL')->orderBy('name')->get();
+        $witels = Regions::where('level', 'WITEL')->orderBy('name')->get();
+        $stos = Regions::where('level', 'STO')->orderBy('name')->get();
+        return view('admin.master.mosques.edit', compact('mosque', 'regionals', 'witels', 'stos'));
     }
 
     public function update(Request $request, Mosque $mosque)
@@ -48,9 +59,15 @@ class MosqueController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'nullable|string|max:100',
-            'type' => 'nullable|string|max:50',
+            'type' => 'nullable|string|in:MASJID,MUSHOLLA',
             'address' => 'nullable|string',
-            'province_id' => 'nullable|exists:regions,id',
+            'tahun_didirikan' => 'nullable|integer|min:1800|max:2100',
+            'jml_bkm' => 'nullable|integer|min:0',
+            'luas_tanah' => 'nullable|numeric|min:0',
+            'daya_tampung' => 'nullable|integer|min:0',
+            'regional_id' => 'nullable|exists:regions,id',
+            'witel_id' => 'nullable|exists:regions,id',
+            'sto_id' => 'nullable|exists:regions,id',
         ]);
         $mosque->update($data);
         return redirect()->route('admin.mosques.index')->with('success', 'Mosque updated');
