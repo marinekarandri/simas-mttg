@@ -24,7 +24,8 @@ class MosqueController extends Controller
         $regionals = Regions::where('level', 'REGIONAL')->orderBy('name')->get();
         $witels = Regions::where('level', 'WITEL')->orderBy('name')->get();
         $stos = Regions::where('level', 'STO')->orderBy('name')->get();
-        return view('admin.master.mosques.create', compact('regionals', 'witels', 'stos'));
+        $mosque = new Mosque();
+        return view('admin.master.mosques.create', compact('mosque', 'regionals', 'witels', 'stos'));
     }
 
     public function store(Request $request)

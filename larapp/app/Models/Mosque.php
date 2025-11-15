@@ -9,6 +9,8 @@ class Mosque extends Model
     protected $fillable = [
         'name', 'code', 'type', 'address',
         'province_id', 'city_id', 'witel_id',
+        'regional_id', 'sto_id',
+        'tahun_didirikan', 'jml_bkm', 'luas_tanah', 'daya_tampung',
         'latitude', 'longitude', 'image_url',
         'description', 'completion_percentage',
         'is_active',
