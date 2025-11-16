@@ -23,8 +23,47 @@ class UserManagementController extends Controller
             abort(403);
         }
 
-        $users = User::with('regionsRoles.region')->orderBy('id', 'desc')->paginate(30);
         $regions = Regions::orderBy('name')->get();
+
+        // Build base users query so we can support search, filters and sorting
+        $query = User::with('regionsRoles.region');
+
+        // Filters from query string
+        $q = request()->query('q'); // search
+        $sort = request()->query('sort');
+        $dir = strtolower(request()->query('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+        $filterRole = request()->query('filter_role'); // role_key filter
+        $filterRegion = request()->query('filter_region'); // region id filter
+
+        if ($q) {
+            $query->where(function($qq) use ($q) {
+                $qq->where('name', 'like', "%{$q}%")
+                   ->orWhere('username', 'like', "%{$q}%")
+                   ->orWhere('email', 'like', "%{$q}%");
+            });
+        }
+
+        if ($filterRole) {
+            $query->whereHas('regionsRoles', function($qq) use ($filterRole) {
+                $qq->where('role_key', $filterRole);
+            });
+        }
+
+        if ($filterRegion) {
+            $query->whereHas('regionsRoles', function($qq) use ($filterRegion) {
+                $qq->where('region_id', (int)$filterRegion);
+            });
+        }
+
+        // Allow sorting by specific columns only
+        $allowedSorts = ['id','name','username','email','created_at'];
+        if ($sort && in_array($sort, $allowedSorts, true)) {
+            $query->orderBy($sort, $dir);
+        } else {
+            $query->orderBy('id', 'desc');
+        }
+
+        $users = $query->paginate(30)->appends(request()->query());
 
         // compute which user ids the current admin can manage (for admins) or all for webmaster
         $manageableUserIds = [];
@@ -62,6 +101,7 @@ class UserManagementController extends Controller
             'admin_sto' => 'STO',
         ];
 
+        // roleHierarchy maps an assigner role -> immediate target roles it may appoint
         $roleHierarchy = [
             'admin_regional' => ['admin_area'],
             'admin_area' => ['admin_witel'],
@@ -69,7 +109,7 @@ class UserManagementController extends Controller
         ];
 
         $allowedByTargetRole = [];
-        $allRegions = $regions->mapWithKeys(fn($r) => [$r->id => $r->name . ' (' . $r->displayTypeLabel() . ')'])->toArray();
+    $allRegions = $regions->mapWithKeys(fn($r) => [$r->id => $r->name . ' (' . $r->displayTypeLabel() . ')'])->toArray();
 
         foreach (array_keys($targetLevelMap) as $targetRole) {
             $level = $targetLevelMap[$targetRole];
@@ -94,8 +134,12 @@ class UserManagementController extends Controller
                 continue;
             }
 
-            // From assignerIds, only keep regions that are at the desired level
-            $ids = Regions::whereIn('id', $assignerIds)->where('level', $level)->pluck('id')->map(fn($v) => (int)$v)->toArray();
+            // From assignerIds, prefer regions at the desired level that are either the assignerIds
+            // themselves or direct children of those ids (covers cases like admin_regional -> admin_area -> admin_witel)
+            $ids = Regions::where('level', $level)
+                ->where(function($q) use ($assignerIds) {
+                    $q->whereIn('id', $assignerIds)->orWhereIn('parent_id', $assignerIds);
+                })->pluck('id')->map(fn($v) => (int)$v)->toArray();
             $allowedByTargetRole[$targetRole] = $ids;
         }
 
@@ -117,6 +161,7 @@ class UserManagementController extends Controller
             return response()->json(['error' => 'Invalid role'], 400);
         }
 
+        // roleHierarchy maps an assigner role -> immediate target roles it may appoint
         $roleHierarchy = [
             'admin_regional' => ['admin_area'],
             'admin_area' => ['admin_witel'],
@@ -128,7 +173,13 @@ class UserManagementController extends Controller
         if ($me->isWebmaster()) {
             foreach (array_keys($roleHierarchy) as $k) $assignerEffective[$k] = null;
         } else {
-            foreach (array_keys($roleHierarchy) as $k) $assignerEffective[$k] = $me->getEffectiveRegionIds($k);
+            // merge per-role effective ids with overall effective regions as a fallback
+            $allEff = $me->getEffectiveRegionIds(null);
+            foreach (array_keys($roleHierarchy) as $k) {
+                $ids = $me->getEffectiveRegionIds($k);
+                if (empty($ids)) $ids = $allEff;
+                $assignerEffective[$k] = $ids;
+            }
         }
 
         // Special-case: admin_regional is only appointed by webmaster. We will return
@@ -186,8 +237,11 @@ class UserManagementController extends Controller
             return response()->json(['all_allowed' => false, 'regions' => []]);
         }
 
-        // Only keep regions at the target level inside allowedIds
-        $regions = Regions::whereIn('id', $allowedIds)->where('level', $targetLevel)->orderBy('name')->get()->map(fn($r) => ['id' => $r->id, 'label' => $r->name . ' (' . $r->displayTypeLabel() . ')'])->values();
+        // Only keep regions at the target level inside allowedIds. Also include direct children of assigner ids
+        $regions = Regions::where('level', $targetLevel)
+            ->where(function($q) use ($allowedIds) {
+                $q->whereIn('id', $allowedIds)->orWhereIn('parent_id', $allowedIds);
+            })->orderBy('name')->get()->map(fn($r) => ['id' => $r->id, 'label' => $r->name . ' (' . $r->displayTypeLabel() . ')'])->values();
 
         return response()->json(['all_allowed' => false, 'regions' => $regions]);
     }
@@ -195,8 +249,9 @@ class UserManagementController extends Controller
     public function update(Request $request, $id)
     {
         $me = Auth::user();
-        if (! $me || ! $me->isWebmaster()) {
-            abort(403);
+        if (! $me) {
+            logger()->warning('UserManagementController@update called without authenticated user', ['id' => $id, 'ip' => $request->ip()]);
+            return redirect()->route('admin.users')->with('status', 'Not authenticated. Silakan login ulang.');
         }
 
         $user = User::findOrFail($id);
@@ -206,11 +261,114 @@ class UserManagementController extends Controller
             'approved' => ['nullable', 'in:0,1'],
         ]);
 
+        // Changing the account role is restricted to webmaster only
+        if (isset($data['role']) && $data['role'] !== $user->role && ! $me->isWebmaster()) {
+            logger()->warning('Unauthorized role change attempt', ['assigner' => $me->id, 'target_user' => $user->id, 'from' => $user->role, 'to' => $data['role'], 'ip' => $request->ip()]);
+            return redirect()->route('admin.users')->with('status', 'Hanya webmaster yang dapat mengubah peran akun.');
+        }
+
+        // Approve/disapprove: webmaster may do it; admins may do it only for users under their scope
+        $canToggleApproved = false;
+        if ($me->isWebmaster()) {
+            $canToggleApproved = true;
+        } elseif ($me->isAdmin()) {
+            // check if target user has region-role inside assigner's effective regions
+            try {
+                $eff = $me->getEffectiveRegionIds();
+                if (! empty($eff)) {
+                    $has = \App\Models\UserRegionRole::where('user_id', $user->id)->whereIn('region_id', $eff)->exists();
+                    if ($has) $canToggleApproved = true;
+                }
+            } catch (\Throwable $e) {
+                // if helper not available or fails, deny conservatively and log
+                logger()->warning('Error while checking effective regions for update', ['assigner' => $me->id, 'error' => $e->getMessage()]);
+                $canToggleApproved = false;
+            }
+        }
+
+        if (isset($data['approved']) && ! $canToggleApproved) {
+            logger()->warning('Unauthorized approved toggle attempt', ['assigner' => $me->id, 'target_user' => $user->id, 'ip' => $request->ip()]);
+            return redirect()->route('admin.users')->with('status', 'Anda tidak punya izin untuk mengubah status persetujuan pengguna ini.');
+        }
+
+        // At this point changes are permitted
         $user->role = $data['role'];
-        $user->approved = isset($data['approved']) && $data['approved'] == '1';
+
+        // normalize approved value: checkbox may be absent when unchecked
+        $newApproved = isset($data['approved']) && $data['approved'] == '1';
+
+        // If approval is being removed, record who unapproved and when. If approved again, clear the audit.
+        if (! $newApproved && $user->approved) {
+            // transitioning from approved -> unapproved
+            try {
+                $user->unapproved_by = $me->id;
+                $user->unapproved_at = \Carbon\Carbon::now();
+            } catch (\Throwable $e) {
+                logger()->warning('Failed to set unapproved_by on user update', ['error' => $e->getMessage(), 'assigner' => $me->id, 'target' => $user->id]);
+            }
+        } elseif ($newApproved) {
+            // transitioning to approved: clear previous unapproval audit
+            $user->unapproved_by = null;
+            $user->unapproved_at = null;
+        }
+
+        $user->approved = $newApproved;
         $user->save();
 
         return redirect()->route('admin.users')->with('status', 'Perubahan disimpan.');
+    }
+
+    /**
+     * AJAX: toggle approved status for a user and record unapproved_by/unapproved_at when revoked.
+     * Returns JSON { success: true, approved: bool, unapproved_by: id|null, unapproved_at: timestamp|null }
+     */
+    public function toggleApproved(Request $request, $id)
+    {
+        $me = Auth::user();
+        if (! $me) return response()->json(['error' => 'Unauthenticated'], 401);
+
+        $user = User::findOrFail($id);
+
+        $data = $request->validate([
+            'approved' => ['required', 'in:0,1'],
+        ]);
+
+        // Check permission similarly to update()
+        $canToggleApproved = false;
+        if ($me->isWebmaster()) {
+            $canToggleApproved = true;
+        } elseif ($me->isAdmin()) {
+            try {
+                $eff = $me->getEffectiveRegionIds();
+                if (! empty($eff)) {
+                    $has = \App\Models\UserRegionRole::where('user_id', $user->id)->whereIn('region_id', $eff)->exists();
+                    if ($has) $canToggleApproved = true;
+                }
+            } catch (\Throwable $e) {
+                logger()->warning('Error while checking effective regions for toggleApproved', ['assigner' => $me->id, 'error' => $e->getMessage()]);
+                $canToggleApproved = false;
+            }
+        }
+
+        if (! $canToggleApproved) {
+            return response()->json(['error' => 'Unauthorized to change approval state'], 403);
+        }
+
+        $newApproved = $data['approved'] == '1';
+
+        if (! $newApproved && $user->approved) {
+            // revoking approval
+            $user->unapproved_by = $me->id;
+            $user->unapproved_at = Carbon::now();
+        } elseif ($newApproved) {
+            $user->unapproved_by = null;
+            $user->unapproved_at = null;
+        }
+
+        $user->approved = $newApproved;
+        $user->save();
+
+        return response()->json(['success' => true, 'approved' => (bool)$user->approved, 'unapproved_by' => $user->unapproved_by, 'unapproved_at' => $user->unapproved_at]);
     }
 
     /**
@@ -359,20 +517,34 @@ class UserManagementController extends Controller
                 $allowedByTargetRole[$targetRole] = $ids; continue;
             }
             $assignerIds = [];
+            $allEff = $me->getEffectiveRegionIds(null);
             foreach (array_keys($roleHierarchy) as $assignerRoleKey) {
                 if (! in_array($targetRole, $roleHierarchy[$assignerRoleKey] ?? [], true)) continue;
                 $eff = $me->getEffectiveRegionIds($assignerRoleKey);
+                if (empty($eff)) $eff = $allEff;
                 $assignerIds = array_merge($assignerIds, $eff);
             }
             $assignerIds = array_values(array_unique($assignerIds));
             if (empty($assignerIds)) { $allowedByTargetRole[$targetRole] = []; continue; }
-            $ids = Regions::whereIn('id', $assignerIds)->where('level', $level)->pluck('id')->map(fn($v)=>(int)$v)->toArray();
+            // prefer regions at target level that are either in assignerIds or are direct children of assignerIds
+            $ids = Regions::where('level', $level)
+                ->where(function($q) use ($assignerIds) {
+                    $q->whereIn('id', $assignerIds)->orWhereIn('parent_id', $assignerIds);
+                })->pluck('id')->map(fn($v)=>(int)$v)->toArray();
             $allowedByTargetRole[$targetRole] = $ids;
         }
 
         $allRegions = $regions->mapWithKeys(fn($r) => [$r->id => $r->name . ' (' . $r->displayTypeLabel() . ')'])->toArray();
 
-        return view('admin.users_create', compact('regions', 'allowedByTargetRole', 'allRegions'));
+        // Current assigner info for the UI: role and assigned regions grouped by role_key
+        $myRole = $me->role;
+        $myAssignments = $me->regionsRoles()->with('region')->get()->map(function($ar){
+            return ['role_key' => $ar->role_key, 'region_name' => $ar->region->name ?? null];
+        })->groupBy('role_key')->map(function($group){
+            return $group->pluck('region_name')->filter()->unique()->values()->toArray();
+        })->toArray();
+
+        return view('admin.users_create', compact('regions', 'allowedByTargetRole', 'allRegions', 'myRole', 'myAssignments'));
     }
 
     /**
@@ -394,8 +566,10 @@ class UserManagementController extends Controller
             'region_ids.*' => ['integer','exists:regions,id'],
         ]);
 
-        $roleKey = $data['role_key'] ?? null;
-        $regionIds = $data['region_ids'] ?? [];
+    $roleKey = $data['role_key'] ?? null;
+    $regionIds = $data['region_ids'] ?? [];
+    // normalize region ids to integers to avoid strict type mismatches
+    $regionIds = array_map('intval', $regionIds);
 
         // Authorization: ensure assigner may appoint the target role and the regions
         if ($roleKey) {
@@ -419,19 +593,40 @@ class UserManagementController extends Controller
             if ($me->isWebmaster()) {
                 $allowedIds = Regions::where('level', $targetLevel)->pluck('id')->map(fn($v)=>(int)$v)->toArray();
             } else {
+                $allEff = $me->getEffectiveRegionIds(null);
                 foreach (array_keys($roleHierarchy) as $assignerRoleKey) {
                     if (! in_array($roleKey, $roleHierarchy[$assignerRoleKey] ?? [], true)) continue;
                     $ids = $me->getEffectiveRegionIds($assignerRoleKey);
+                    if (empty($ids)) $ids = $allEff;
                     $allowedIds = array_merge($allowedIds, $ids);
                 }
                 $allowedIds = array_values(array_unique($allowedIds));
-                // filter by level
-                $allowedIds = Regions::whereIn('id', $allowedIds)->where('level', $targetLevel)->pluck('id')->map(fn($v)=>(int)$v)->toArray();
+                // include regions at target level that are either in allowedIds or direct children of allowedIds
+                $allowedIds = Regions::where('level', $targetLevel)
+                    ->where(function($q) use ($allowedIds) {
+                        $q->whereIn('id', $allowedIds)->orWhereIn('parent_id', $allowedIds);
+                    })->pluck('id')->map(fn($v)=>(int)$v)->toArray();
             }
 
             // Ensure provided regionIds are subset of allowedIds
+            // If any requested region is outside allowedIds, log full details and reject
             foreach ($regionIds as $rid) {
                 if (! in_array($rid, $allowedIds, true)) {
+                    // collect human-friendly names for requested ids where possible
+                    try {
+                        $requestedNames = \App\Models\Regions::whereIn('id', $regionIds)->pluck('name', 'id')->toArray();
+                    } catch (\Throwable $e) {
+                        $requestedNames = [];
+                    }
+                    logger()->warning('Assign attempt outside allowed regions', [
+                        'assigner' => $me->id,
+                        'role_key' => $roleKey,
+                        'requested_region_ids' => $regionIds,
+                        'requested_region_names' => $requestedNames,
+                        'allowed_ids' => $allowedIds,
+                        'allowed_count' => count($allowedIds),
+                        'ip' => $request->ip(),
+                    ]);
                     return redirect()->back()->with('status', 'You are not allowed to assign selected region(s).')->withInput();
                 }
             }

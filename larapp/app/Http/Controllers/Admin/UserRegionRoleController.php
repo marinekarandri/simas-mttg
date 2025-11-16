@@ -18,14 +18,20 @@ class UserRegionRoleController extends Controller
     public function store(Request $request, $userId)
     {
         $assigner = Auth::user();
-        if (! $assigner) abort(403);
+        if (! $assigner) {
+            // better UX: redirect back with a message instead of throwing a bare 403
+            // also log to help debugging why the request was unauthenticated
+            logger()->warning('UserRegionRoleController@store called without authenticated user', ['userId' => $userId, 'ip' => $request->ip()]);
+            return back()->with('status', 'Not authenticated. Silakan login ulang.');
+        }
 
         $user = User::findOrFail($userId);
 
         $data = $request->validate([
             'role_key' => ['required', 'string'],
-            'region_ids' => ['required', 'array'],
-            'region_ids.*' => ['required', 'integer', 'exists:regions,id'],
+            // allow empty selection (nullable) so unchecking all boxes results in removal
+            'region_ids' => ['nullable', 'array'],
+            'region_ids.*' => ['integer', 'exists:regions,id'],
         ]);
 
         $role = $data['role_key'];
@@ -54,8 +60,12 @@ class UserRegionRoleController extends Controller
             $assignerRoleEffective[$rKey] = $assigner->getEffectiveRegionIds($rKey);
         }
 
+        $regionIds = $data['region_ids'] ?? [];
+        // normalize ints
+        $regionIds = array_map('intval', $regionIds);
+
         // For each requested target region, ensure the assigner is allowed to appoint the requested role
-        foreach ($data['region_ids'] as $rid) {
+        foreach ($regionIds as $rid) {
             if ($canAssignAnywhere) continue;
 
             $allowedForThisRegion = false;
@@ -73,16 +83,59 @@ class UserRegionRoleController extends Controller
             }
 
             if (! $allowedForThisRegion) {
+                // log offending attempt for operators to inspect
+                logger()->warning('Unauthorized role assignment attempt', [
+                    'assigner_id' => $assigner->id ?? null,
+                    'target_user_id' => $user->id,
+                    'role' => $role,
+                    'region_id' => $rid,
+                    'ip' => $request->ip(),
+                ]);
                 return back()->with('status', 'You are not authorized to assign role '.$role.' for region id '.$rid);
             }
         }
 
-        // Persist assignments (idempotent)
-        foreach ($data['region_ids'] as $rid) {
+        // Persist assignments (idempotent) for any selected ids
+        foreach ($regionIds as $rid) {
             UserRegionRole::updateOrCreate(
                 ['user_id' => $user->id, 'role_key' => $role, 'region_id' => $rid],
                 ['created_by' => $assigner->id]
             );
+        }
+
+        // Remove any existing assignments for this user/role that were unchecked in the form.
+        // We only remove assignments that the assigner is authorized to remove (webmaster or creator
+        // or within their effective regions for a parent role).
+        $existing = UserRegionRole::where('user_id', $user->id)->where('role_key', $role)->get();
+    $toKeep = $regionIds;
+        $hierarchy = [
+            'admin_regional' => ['admin_area'],
+            'admin_area' => ['admin_witel'],
+            'admin_witel' => ['admin_sto'],
+        ];
+
+        foreach ($existing as $ex) {
+            $rid = (int)$ex->region_id;
+            if (in_array($rid, $toKeep, true)) continue;
+
+            // determine if assigner may remove this assignment
+            $mayRemove = false;
+            if ($assigner->isWebmaster() || $ex->created_by === $assigner->id) {
+                $mayRemove = true;
+            } else {
+                // assigner may remove if they have a parent role that can appoint this role and include the region
+                foreach (array_keys($hierarchy) as $assignerRoleKey) {
+                    if (! in_array($role, $hierarchy[$assignerRoleKey] ?? [], true)) continue;
+                    $eff = $assigner->getEffectiveRegionIds($assignerRoleKey);
+                    if (is_array($eff) && in_array($rid, $eff, true)) { $mayRemove = true; break; }
+                }
+            }
+
+            if ($mayRemove) {
+                try { $ex->delete(); } catch (\Throwable $e) { logger()->warning('Failed to delete assignment during sync', ['id' => $ex->id, 'error' => $e->getMessage()]); }
+            } else {
+                logger()->warning('Skipped removing assignment user lacks permission for', ['assigner' => $assigner->id, 'assignment_id' => $ex->id, 'region_id' => $rid]);
+            }
         }
 
         // Invalidate caches for the affected user (and assigner) so effective region lists refresh
@@ -120,7 +173,17 @@ class UserRegionRoleController extends Controller
                     break;
                 }
             }
-            if (! $allowed) abort(403);
+            if (! $allowed) {
+                logger()->warning('Unauthorized attempt to remove assignment', [
+                    'assigner_id' => $assigner->id ?? null,
+                    'assignment_id' => $assignment->id,
+                    'target_user_id' => $assignment->user_id,
+                    'role_key' => $assignment->role_key,
+                    'region_id' => $assignment->region_id,
+                    'ip' => $request->ip(),
+                ]);
+                return back()->with('status', 'Anda tidak punya izin untuk menghapus assignment ini.');
+            }
         }
 
         $assignment->delete();

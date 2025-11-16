@@ -26,6 +26,8 @@ class User extends Authenticatable
         'password',
         'role',
         'approved',
+        'unapproved_by',
+        'unapproved_at',
     ];
 
     /**
@@ -50,6 +52,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'approved' => 'boolean',
             'deleted_at' => 'datetime',
+            'unapproved_at' => 'datetime',
+            'unapproved_by' => 'integer',
         ];
     }
 

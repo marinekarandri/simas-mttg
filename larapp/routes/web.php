@@ -21,6 +21,8 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
 	Route::get('/users/create', [\App\Http\Controllers\Admin\UserManagementController::class, 'create'])->name('admin.users.create');
 	Route::post('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'store'])->name('admin.users.store');
 	Route::post('/users/{id}', [\App\Http\Controllers\Admin\UserManagementController::class, 'update'])->name('admin.users.update');
+	// Toggle approved/unapproved via AJAX (returns JSON)
+	Route::post('/users/{id}/toggle-approved', [\App\Http\Controllers\Admin\UserManagementController::class, 'toggleApproved'])->name('admin.users.toggle_approved');
     // bulk delete users (selected)
     Route::post('/users/delete-multiple', [\App\Http\Controllers\Admin\UserManagementController::class, 'bulkDelete'])->name('admin.users.bulk_delete');
 	Route::post('/users/{id}/delete', [\App\Http\Controllers\Admin\UserManagementController::class, 'deleteSingle'])->name('admin.users.delete_single');
