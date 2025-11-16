@@ -21,6 +21,7 @@
           <th>Username</th>
           <th>Email</th>
           <th>Role</th>
+          <th>Witel</th>
           <th>Approved</th>
           <th>Scope</th>
           <th>Created At</th>
@@ -37,6 +38,22 @@
             <td>{{ $u->username }}</td>
             <td>{{ $u->email }}</td>
             <td>{{ $u->role }}</td>
+            <td>
+              @php
+                $witels = $u->regionsRoles->filter(fn($ar) => ($ar->role_key ?? '') === 'admin_witel')->map(fn($ar) => $ar->region->name ?? null)->filter()->unique()->values()->toArray();
+              @endphp
+              @if(count($witels))
+                @foreach($witels as $w)
+                  @if(trim($w) === 'Witel Surabaya Utara')
+                    <span class="badge bg-secondary" style="font-size:0.72em;padding:2px 6px;margin-right:4px">{{ $w }}</span>
+                  @else
+                    <span class="badge bg-light text-dark" style="font-size:0.85em;padding:3px 8px;margin-right:4px;border:1px solid #ddd">{{ $w }}</span>
+                  @endif
+                @endforeach
+              @else
+                -
+              @endif
+            </td>
             <td>{{ $u->approved ? 'Yes' : 'No' }}</td>
             <td>
               @php
@@ -44,12 +61,12 @@
               @endphp
               {!! count($scopes) ? e(implode(', ', $scopes)) : '-' !!}
             </td>
-            <td>{{ $u->created_at ? $u->created_at->format('Y-m-d H:i') : '-' }}</td>
+            <td>{{ $u->created_at ? $u->created_at->diffForHumans() : '-' }}</td>
             <td>
               @php
                 $la = $lastActivities[$u->id] ?? null;
                 if ($la) {
-                  try { $lastStr = \Carbon\Carbon::createFromTimestamp($la)->toDateTimeString(); } catch (\Throwable $e) { $lastStr = '-'; }
+                  try { $lastStr = \Carbon\Carbon::createFromTimestamp($la)->diffForHumans(); } catch (\Throwable $e) { $lastStr = '-'; }
                 } else { $lastStr = '-'; }
               @endphp
               {{ $lastStr }}
