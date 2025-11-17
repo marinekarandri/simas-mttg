@@ -15,9 +15,16 @@
     <div class="container">
         <div class="news-wrap p-0" style="background:transparent;padding:0;">
             <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-                <div class="card-header bg-white border-0 pt-4 pb-3 text-center">
-                    <h2 class="mb-1" style="font-weight:700;font-size:1.85rem;">Informasi Terkini</h2>
-                    <div class="sub" style="font-size:.85rem;color:#6b7280;">informasi / berita terkini sekitar masjid Telkom Regional 3</div>
+                <div class="card-header bg-white border-0 pt-3 pb-2">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap">
+                        <div class="header-left">
+                            <h2 class="mb-1" style="font-weight:700;font-size:1.85rem;margin:0;">Informasi Terkini</h2>
+                            <div class="sub" style="font-size:.85rem;color:#6b7280;">informasi / berita terkini sekitar masjid Telkom Regional 3</div>
+                        </div>
+                        <div class="header-right ms-3">
+                            <a href="#" class="btn btn-outline-dark rounded-pill">Lihat Semua</a>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body pt-2 pb-4 px-4">
                     <div class="news-grid">
@@ -39,9 +46,7 @@
                             </div>
                         @endforeach
                     </div>
-                    <div class="news-footer">
-                        <a href="" class="btn btn-more">Lihat Semua Berita</a>
-                    </div>
+                    
                 </div>
             </div>
         </div>

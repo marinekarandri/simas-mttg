@@ -162,3 +162,17 @@ body { background-color: #f8f9fa; font-family: 'Segoe UI', Arial, sans-serif; }
 .autocomplete-box::-webkit-scrollbar-track { background: #0b1220; border-radius:6px; }
 .autocomplete-box::-webkit-scrollbar-thumb { background:#243142; border-radius:6px; }
 .autocomplete-box::-webkit-scrollbar-thumb:hover { background:#2b3a52; }
+
+/* Maps */
+.map-section-contained{padding:0;margin:0;height:80vh;width:100%;overflow:hidden}
+.map-wrapper-full{position:relative;height:100%;width:100%}
+.main-map{position:absolute;inset:0;height:100%;width:100%;z-index:1}
+.map-overlay-controls{position:absolute;top:12px;left:12px;z-index:1100;background:rgba(255,255,255,0.95);padding:12px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.12);max-width:320px}
+.map-filter-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.map-filter-form{display:flex;flex-direction:column;gap:8px}
+.map-filter-form .form-group{display:flex;flex-direction:column}
+.map-status{position:absolute;top:10px;right:10px;z-index:1110;background:rgba(255,255,255,.9);padding:6px 10px;border-radius:6px;font-size:.75rem;font-weight:600;color:#333}
+.btn-reset{background:transparent;border:0;padding:4px 6px;cursor:pointer}
+@media (max-width:768px){
+	.map-overlay-controls{left:8px;right:8px;max-width:unset;width:auto}
+}

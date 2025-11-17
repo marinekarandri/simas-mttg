@@ -16,7 +16,16 @@
 						<li class="nav-item"><a class="nav-link" href="#">Unduh Data</a></li>
 						<li class="nav-item"><a class="nav-link" href="#">Kontak Kami</a></li>
 						<li class="nav-item ms-lg-1">
-							<a class="btn btn-login-gradient rounded-pill px-3 py-1" href="{{ route('login') }}">Login</a>
+							@auth
+								@php $dashboardRoute = Route::has('dashboard') ? route('dashboard') : url('/home'); @endphp
+								<a class="btn btn-login-gradient rounded-pill px-3 py-1" href="{{ $dashboardRoute }}">Dashboard</a>
+							@else
+								@if(Route::has('login'))
+									<a class="btn btn-login-gradient rounded-pill px-3 py-1" href="{{ route('login') }}">Login</a>
+								@else
+									<a class="btn btn-login-gradient rounded-pill px-3 py-1" href="/login">Login</a>
+								@endif
+							@endauth
 						</li>
 					</ul>
 				</div>

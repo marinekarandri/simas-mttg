@@ -199,12 +199,14 @@
 	// --- Map & Filters ---
 	// Map container may be named 'map' (dashboard view) or 'mainMap' (frontend).
 	const mapContainerId = document.getElementById('mainMap') ? 'mainMap' : (document.getElementById('map') ? 'map' : null);
+	// expose map variable to outer scope so marker functions can use it
+	let map = null;
 	if(mapContainerId){
 		function initMap(){
 			if(typeof L === 'undefined') return; // should not happen
-			const map = L.map(mapContainerId).setView([-7.25,112.75],7);
+			map = L.map(mapContainerId).setView([-7.25,112.75],7);
 			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
-			L.marker([-7.25,112.75]).addTo(map).bindPopup('Lokasi contoh: Jawa Timur').openPopup();
+			// example marker removed to avoid placeholder popup
 			return map;
 		}
 
@@ -227,29 +229,9 @@
 		// no map on this page — skip map initialization
 	}
 
-	// --- Map filter controls: toggle & reset ---
-	const mapFilterCard = document.getElementById('mapFilterCard');
-	const mapFilterToggle = document.getElementById('mapFilterToggle');
+	// --- Map filter reset control ---
 	const mapFilterReset = document.getElementById('mapFilterReset');
-
-
-	if(mapFilterToggle){
-		mapFilterToggle.addEventListener('click', function(){
-			const left = document.querySelector('.map-left');
-			const right = document.querySelector('.map-right');
-			if(!left || !right) return;
-			if(left.style.display === 'none'){
-				left.style.display = '';
-				right.style.flex = '1 1 70%';
-			} else {
-				left.style.display = 'none';
-				right.style.flex = '1 1 100%';
-			}
-			// let map invalidate size after layout change if Leaflet is present
-			setTimeout(()=>{ if(window.L && window.L.map) try{ const mm = window.L.map(document.getElementById('mainMap') ? 'mainMap' : 'map'); mm.invalidateSize(); }catch(e){} }, 300);
-		});
-	}
-
+	// Note: map filter toggle removed — filter stays visible always.
 	if(mapFilterReset){
 		mapFilterReset.addEventListener('click', function(){
 			// reset selects/inputs in the form
@@ -290,7 +272,8 @@
 		}catch(e){ resetSelect(provinceSelect,'Gagal memuat'); }
 	}
 
-	provinceSelect.addEventListener('change', async e=>{
+	if(provinceSelect){
+		provinceSelect.addEventListener('change', async e=>{
 		const id = e.target.value;
 		resetSelect(citySelect,'Pilih Kota / Kabupaten');
 		resetSelect(witelSelect,'Pilih Witel');
@@ -303,9 +286,11 @@
 			if(cities.length){ enableSelect(citySelect); cities.forEach(c=>{ const opt=document.createElement('option'); opt.value=c.id; opt.textContent=c.name; citySelect.appendChild(opt); }); }
 			else{ disableSelect(citySelect); }
 		}catch{ disableSelect(citySelect); }
-	});
+		});
+	}
 
-	citySelect.addEventListener('change', async e=>{
+	if(citySelect){
+		citySelect.addEventListener('change', async e=>{
 		const id = e.target.value;
 		resetSelect(witelSelect,'Pilih Witel');
 		if(!id){ disableSelect(witelSelect); return; }
@@ -316,7 +301,8 @@
 			if(witels.length){ enableSelect(witelSelect); witels.forEach(w=>{ const opt=document.createElement('option'); opt.value=w.id; opt.textContent=w.name; witelSelect.appendChild(opt); }); }
 			else{ disableSelect(witelSelect); }
 		}catch{ disableSelect(witelSelect); }
-	});
+		});
+	}
 
 	const mapStatusEl = document.getElementById('mapStatus');
 	function showMapStatus(msg, type='info'){
@@ -331,11 +317,11 @@
 
 	async function fetchMarkers(extraParams={}){
 		const params = new URLSearchParams();
-		if(provinceSelect.value) params.append('province_id', provinceSelect.value);
-		if(citySelect.value) params.append('city_id', citySelect.value);
-		if(witelSelect.value) params.append('witel_id', witelSelect.value);
-		if(typeSelect.value) params.append('type', typeSelect.value);
-		if(queryInput.value.trim()) params.append('search', queryInput.value.trim()); // gunakan "search" sesuai API
+		if(provinceSelect && provinceSelect.value) params.append('province_id', provinceSelect.value);
+		if(citySelect && citySelect.value) params.append('city_id', citySelect.value);
+		if(witelSelect && witelSelect.value) params.append('witel_id', witelSelect.value);
+		if(typeSelect && typeSelect.value) params.append('type', typeSelect.value);
+		if(queryInput && queryInput.value && queryInput.value.trim()) params.append('search', queryInput.value.trim()); // gunakan "search" sesuai API
 		Object.entries(extraParams).forEach(([k,v])=>{ if(v!==undefined&&v!==null&&v!=='') params.set(k,v); });
 		showMapStatus('Memuat lokasi...');
 		try{
@@ -350,17 +336,38 @@
 		}
 	}
 
-	filterForm.addEventListener('submit', async e=>{
-		e.preventDefault();
-		fetchMarkers();
-	});
+	if(filterForm){
+		filterForm.addEventListener('submit', async e=>{
+			e.preventDefault();
+			fetchMarkers();
+		});
+	}
 
-	let markersLayer = L.layerGroup().addTo(map);
+	// markersLayer is created only when Leaflet map is available
+	let markersLayer = null;
 	function addMarkers(items){
+		if(!map || typeof L === 'undefined') return; // can't add markers without map
+		if(!markersLayer) markersLayer = L.layerGroup().addTo(map);
 		markersLayer.clearLayers();
+
+		// prepare icons (cached)
+		if(!window.__simas_icons){
+			const base = window.location && window.location.origin ? window.location.origin : '';
+			window.__simas_icons = {
+				masjid: L.icon({ iconUrl: base + '/images/mosque-map-icon.png', iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -30] }),
+				musholla: L.icon({ iconUrl: base + '/images/mushalla-map-icon.png', iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -30] }),
+				default: L.icon({ iconUrl: base + '/images/mosque.png', iconSize: [34,34], iconAnchor: [17,34], popupAnchor: [0,-30] })
+			};
+		}
+
 		items.forEach(m=>{
 			if(!m.latitude || !m.longitude) return;
-			const marker = L.marker([m.latitude, m.longitude]);
+			const lat = parseFloat(m.latitude);
+			const lng = parseFloat(m.longitude);
+			if(Number.isNaN(lat) || Number.isNaN(lng)) return;
+			const t = (m.type||'').toUpperCase();
+			const icon = t === 'MUSHOLLA' ? window.__simas_icons.musholla : (t === 'MASJID' ? window.__simas_icons.masjid : window.__simas_icons.default);
+			const marker = L.marker([lat, lng], { icon });
 			marker.bindPopup(`<strong>${m.name}</strong><br><small>${m.address||''}</small>`);
 			markersLayer.addLayer(marker);
 		});
