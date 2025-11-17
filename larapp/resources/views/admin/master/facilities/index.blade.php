@@ -1,7 +1,12 @@
 <x-admin.layout title="Master - Facilities">
   <div class="p-4">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <h3>Facilities</h3>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div>
+          <h3 style="margin:0">Facilities</h3>
+          <div style="font-size:12px;color:#6b7280;margin-top:4px">Master · <a href="{{ route('dashboard') }}">Dashboard</a> / <strong>Facilities</strong></div>
+        </div>
+      </div>
       <div><a href="{{ route('admin.facilities.create') }}" class="btn btn-sm btn-primary">Create Facility</a></div>
     </div>
     <form method="GET" style="margin-bottom:12px">
@@ -49,4 +54,10 @@
     </table>
     {{ $items->withQueryString()->links() }}
   </div>
+  @push('scripts')
+    <script>
+      // keyboard shortcut: Alt+Shift+D to go back to dashboard
+      (function(){ document.addEventListener('keydown', function(e){ if(e.altKey && e.shiftKey && String(e.key).toLowerCase() === 'd'){ window.location = '{{ route("dashboard") }}'; } }); })();
+    </script>
+  @endpush
 </x-admin.layout>
