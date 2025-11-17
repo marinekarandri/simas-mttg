@@ -9,7 +9,7 @@ class Mosque extends Model
     protected $fillable = [
         'name', 'code', 'type', 'address',
         'province_id', 'city_id', 'witel_id',
-        'regional_id', 'sto_id',
+        'regional_id', 'area_id', 'sto_id',
         'tahun_didirikan', 'jml_bkm', 'luas_tanah', 'daya_tampung',
         'latitude', 'longitude', 'image_url',
         'description', 'completion_percentage',
@@ -28,6 +28,11 @@ class Mosque extends Model
     public function regional()
     {
         return $this->belongsTo(Regions::class, 'regional_id');
+    }
+
+    public function area()
+    {
+        return $this->belongsTo(Regions::class, 'area_id');
     }
 
     public function city()

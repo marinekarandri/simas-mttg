@@ -1,7 +1,10 @@
 <x-admin.layout title="Mosques">
   <div class="p-4">
     <div class="flex justify-between items-center mb-4">
-      <h3>Mosques</h3>
+      <div class="flex items-center gap-3">
+        <a href="{{ route('dashboard') }}" class="btn btn-ghost btn-sm" title="Back to dashboard">&larr; Dashboard</a>
+        <h3 class="m-0">Mosques</h3>
+      </div>
       <a href="{{ route('admin.mosques.create') }}" class="btn btn-primary">Create Mosque</a>
     </div>
 
@@ -10,7 +13,9 @@
         <tr>
           <th>#</th>
           <th>Name</th>
+          <th style="width:48px;text-align:center">📸</th>
           <th>Regional</th>
+          <th>Area</th>
           <th>Witel</th>
           <th>STO</th>
           <th>Tahun</th>
@@ -24,18 +29,28 @@
           <tr>
             <td style="width:40px">{{ $loop->iteration + ($mosques->currentPage()-1)*$mosques->perPage() }}</td>
             <td>{{ $m->name }}</td>
+            <td style="text-align:center">@if($m->photos && $m->photos->count()) ✅ @endif</td>
             <td>{{ $m->regional?->name }}</td>
+            <td>{{ $m->area?->name }}</td>
             <td>{{ $m->witel?->name }}</td>
             <td>{{ $m->sto?->name }}</td>
             <td>{{ $m->tahun_didirikan ?? '-' }}</td>
             <td>{{ $m->jml_bkm ?? 0 }}</td>
             <td>{{ $m->daya_tampung ?? '-' }}</td>
             <td style="display:flex;gap:8px;align-items:center;justify-content:flex-end">
-              <a href="{{ route('admin.mosques.edit', $m->id) }}" class="btn btn-sm">Edit</a>
+              @can('update', $m)
+                <a href="{{ route('admin.mosques.edit', $m->id) }}" class="btn btn-sm">Edit</a>
+              @else
+                <button class="btn btn-sm" disabled title="You don't have permission to edit">Edit</button>
+              @endcan
               <form action="{{ route('admin.mosques.destroy', $m->id) }}" method="POST" style="display:inline">
                 @csrf
                 @method('DELETE')
-                <button class="btn btn-danger btn-sm" onclick="return confirm('Delete this mosque?')">Delete</button>
+                @can('delete', $m)
+                  <button class="btn btn-danger btn-sm" onclick="return confirm('Delete this mosque?')">Delete</button>
+                @else
+                  <button class="btn btn-danger btn-sm" disabled title="You don't have permission to delete">Delete</button>
+                @endcan
               </form>
               <button type="button" class="btn btn-sm btn-secondary btn-view-map" data-id="{{ $m->id }}" title="View map" style="margin-left:6px">
                 <!-- map pin icon -->
@@ -50,7 +65,7 @@
 
           {{-- Detail row hidden by default --}}
           <tr class="mosque-detail-row" id="mosque-detail-{{ $m->id }}" style="display:none;background:#fbfbfd">
-            <td colspan="9">
+            <td colspan="10">
               <div class="detail-collapse">
                 <div class="detail-columns" style="padding:12px 0">
                 <div style="flex:1;min-width:260px">
