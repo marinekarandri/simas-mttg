@@ -17,7 +17,7 @@
       <select name="type" class="form-input">
         <option value="">-- Select Type --</option>
         <option value="MASJID" {{ (old('type', $mosque->type ?? '') == 'MASJID') ? 'selected' : '' }}>Masjid</option>
-        <option value="MUSHALLA" {{ (old('type', $mosque->type ?? '') == 'MUSHALLA') ? 'selected' : '' }}>Mushalla</option>
+        <option value="MUSHOLLA" {{ (old('type', $mosque->type ?? '') == 'MUSHOLLA') ? 'selected' : '' }}>Mushalla</option>
       </select>
     </div>
   </div>
