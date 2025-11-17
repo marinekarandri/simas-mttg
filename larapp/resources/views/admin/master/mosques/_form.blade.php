@@ -12,6 +12,17 @@
   </div>
 
   <div class="form-row">
+    <label class="form-label">Type</label>
+    <div class="field">
+      <select name="type" class="form-input">
+        <option value="">-- Select Type --</option>
+        <option value="MASJID" {{ (old('type', $mosque->type ?? '') == 'MASJID') ? 'selected' : '' }}>Masjid</option>
+        <option value="MUSHALLA" {{ (old('type', $mosque->type ?? '') == 'MUSHALLA') ? 'selected' : '' }}>Mushalla</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-row">
     <label class="form-label">Regional</label>
     <div class="field">
   <select name="regional_id" class="form-input" data-selected="{{ old('regional_id', $mosque->regional_id ?? ($lockedValues['regional_id'] ?? '')) }}" data-locked="{{ $lockedValues['regional_id'] ?? '' }}" @if(!empty($lockedFields) && in_array('regional_id', $lockedFields)) disabled @endif>
@@ -568,10 +579,13 @@
 
           // when sending FormData for files, always use POST so PHP/Laravel can parse uploaded files.
           // If the form intends to be PUT/PATCH, include the _method override in the FormData.
-          var origMethod = (mosqueForm.querySelector('input[name="_method"]') || {}).value || mosqueForm.method || 'POST';
-          var httpMethod = 'POST';
-          if(origMethod && origMethod.toUpperCase() !== 'POST'){
-            try{ fd.set(' _method', origMethod); }catch(e){ fd.append('_method', origMethod); }
+          // determine original intent (PUT/PATCH) and ensure Laravel sees the _method override
+          var origMethodEl = mosqueForm.querySelector('input[name="_method"]');
+          var origMethod = origMethodEl ? (origMethodEl.value || mosqueForm.method || 'POST') : (mosqueForm.method || 'POST');
+          var httpMethod = 'POST'; // always send FormData via POST so PHP receives files
+          if(origMethod && String(origMethod).toUpperCase() !== 'POST'){
+            // always append the _method key (no leading spaces) so Laravel can detect it
+            try{ fd.append('_method', origMethod); }catch(e){ /* ignore append errors */ }
           }
           fetch(mosqueForm.action, { method: httpMethod, body: fd, credentials: 'same-origin' })
             .then(function(res){
