@@ -346,4 +346,47 @@ class RegionController extends Controller
         $region->delete();
         return redirect()->route('admin.regions.index')->with('success', 'Region deleted.');
     }
+
+    /**
+     * Return direct children of a given parent_id as JSON.
+     * Optional query param `level` may be provided to restrict children to a specific level (e.g. AREA, WITEL, STO).
+     */
+    public function children(Request $request)
+    {
+        try {
+            $parent = $request->query('parent_id');
+            // If the caller expects JSON (AJAX) but is not authenticated, return
+            // an empty array so the frontend can degrade gracefully instead of
+            // receiving a 401 or HTML redirect. Regions listing is non-sensitive
+            // for dependent selects used during create/edit flows.
+            if (!\Illuminate\Support\Facades\Auth::check() && $request->expectsJson()) {
+                return response()->json([]);
+            }
+            $level = $request->query('level');
+            $descendants = $request->query('descendants');
+            if (empty($parent)) {
+                return response()->json([]);
+            }
+            if ($descendants) {
+                // collect descendant ids including the parent
+                $ids = Regions::collectDescendantIds((int)$parent);
+                $q = Regions::whereIn('id', $ids);
+            } else {
+                $q = Regions::where('parent_id', $parent);
+            }
+            if ($level) {
+                $q->where('level', $level);
+            }
+            $children = $q->orderBy('name')->get(['id','name','parent_id','level']);
+            return response()->json($children);
+        } catch (\Throwable $e) {
+            // Avoid using the Laravel Log manager here because there are known
+            // logging bootstrap issues in some dev environments (see laravel.log).
+            // Use error_log as a safe fallback so the request doesn't return 500.
+            error_log('RegionController::children error: ' . $e->getMessage());
+            error_log($e->getTraceAsString());
+            // Return an empty array (200) to the client so the UI can degrade gracefully.
+            return response()->json([]);
+        }
+    }
 }

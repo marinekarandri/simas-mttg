@@ -83,5 +83,30 @@
 
   {{-- Render any page-specific scripts/styles pushed by child views --}}
   @stack('scripts')
+
+  {{-- Global toasts for flash messages (success / error) --}}
+  <div aria-live="polite" aria-atomic="true" style="position:fixed;top:20px;right:20px;z-index:2000">
+    <div id="flash-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000" style="min-width:220px">
+      <div class="toast-header">
+        <strong class="me-auto" id="flash-title">Notice</strong>
+        <small class="text-muted"></small>
+        <button type="button" class="btn-close ms-2 mb-1" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body" id="flash-body"></div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      var toastEl = document.getElementById('flash-toast');
+      if(!toastEl) return;
+      var bsToast = new bootstrap.Toast(toastEl);
+  var success = <?php echo json_encode(session('success') ?? null, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP); ?>;
+  var error = <?php echo json_encode(session('error') ?? null, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP); ?>;
+      if(success){ document.getElementById('flash-title').innerText = 'Success'; document.getElementById('flash-body').innerText = success; toastEl.classList.remove('bg-danger'); toastEl.classList.add('bg-white'); bsToast.show(); }
+      else if(error){ document.getElementById('flash-title').innerText = 'Error'; document.getElementById('flash-body').innerText = error; toastEl.classList.remove('bg-white'); toastEl.classList.add('bg-danger','text-white'); bsToast.show(); }
+    })();
+  </script>
 </body>
 </html>
+

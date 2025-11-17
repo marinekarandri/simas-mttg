@@ -2,9 +2,8 @@
   @auth
   <div class="d-flex" id="app-layout" style="min-height:100vh">
     <!-- Left sidebar -->
-  <aside id="sidebar" style="width:320px; background:#0b1220; color:#fff; padding:20px; display:flex; flex-direction:column; position:relative; transform:translateX(0); transition: transform .22s ease;">
-    <!-- simple X toggle inside the sidebar -->
-    <button id="sidebarToggleX" aria-label="Toggle Nav" title="Toggle Nav" style="position:absolute; right:10px; top:10px; width:34px; height:34px; border-radius:6px; background:rgba(255,255,255,0.04); border:0; color:#fff; cursor:pointer; font-weight:700; line-height:1;">×</button>
+  <aside id="sidebar" style="width:300px; background:#0b1220; color:#fff; padding:20px; display:flex; flex-direction:column; position:relative; transform:translateX(0); transition: transform .22s ease;">
+  <!-- sidebar hide toggle removed to keep sidebar always open -->
         <div style="display:flex; align-items:center; gap:12px; margin-bottom:18px">
           <img src="https://svgshare.com/i/14jG.svg" alt="logo" style="width:44px;height:44px;border-radius:8px;background:#fff;padding:6px;" onerror="this.style.display='none'">
           <div>
@@ -15,7 +14,7 @@
 
         <nav>
           <ul id="sidebar-menu" style="list-style:none;padding:0;margin:0;">
-            <li style="margin-bottom:8px" data-key="dashboard"><a href="#" class="menu-link" style="color:#fff;text-decoration:none;padding:10px 12px;display:flex;align-items:center;gap:10px;border-radius:8px"><span style="width:18px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="#fff" stroke-width="1.5"/><path d="M7 14h3v-6H7v6zM14 17h3v-10h-3v10z" fill="#fff" opacity="0.95"/></svg></span>Dashboard</a></li>
+            <li style="margin-bottom:8px" data-key="dashboard"><a href="#" data-no-action="1" class="menu-link active" style="color:#fff;text-decoration:none;padding:10px 12px;display:flex;align-items:center;gap:10px;border-radius:8px"><span style="width:18px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="#fff" stroke-width="1.5"/><path d="M7 14h3v-6H7v6zM14 17h3v-10h-3v10z" fill="#fff" opacity="0.95"/></svg></span>Dashboard</a></li>
             <li style="margin-bottom:8px" data-key="master">
               <a href="#" class="menu-link" aria-expanded="false" style="color:#fff;text-decoration:none;padding:10px 12px;display:flex;align-items:center;gap:10px;border-radius:8px">
                 <span style="width:18px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="6.5" rx="7" ry="2.5" stroke="#fff" stroke-width="1.2"/><path d="M5 6.5v6c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-6" stroke="#fff" stroke-width="1.2"/></svg></span>
@@ -23,16 +22,31 @@
               </a>
               <ul class="submenu" style="list-style:none;padding-left:14px;margin:6px 0 0 0;display:none;">
                 <li data-key="regions" style="margin-bottom:6px"><a href="{{ route('admin.regions.index') }}" style="color:#cbd5e1;text-decoration:none;padding-left:18px;display:flex;align-items:center;gap:8px"><span style="width:14px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2l3 6 6 .5-4.5 4 1 6L12 16l-5.5 3.5 1-6L3 8.5 9 8 12 2z" stroke="#cbd5e1" stroke-width="1" fill="none"/></svg></span>Regions</a></li>
-                <li data-key="facilities" style="margin-bottom:6px"><a href="{{ route('admin.facilities.index') }}" style="color:#cbd5e1;text-decoration:none;padding-left:18px;display:flex;align-items:center;gap:8px"><span style="width:14px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="11" rx="1" stroke="#cbd5e1" stroke-width="1" fill="none"/><path d="M8 7V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" stroke="#cbd5e1" stroke-width="1" fill="none"/></svg></span>Facilities</a></li>
-                <li data-key="categories" style="margin-bottom:6px"><a href="{{ route('admin.categories.index') }}" style="color:#cbd5e1;text-decoration:none;padding-left:18px;display:flex;align-items:center;gap:8px"><span style="width:14px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 12h16" stroke="#cbd5e1" stroke-width="1"/><path d="M4 6h16" stroke="#cbd5e1" stroke-width="1"/><path d="M4 18h16" stroke="#cbd5e1" stroke-width="1"/></svg></span>Categories</a></li>
                 <li data-key="mosques" style="margin-bottom:6px"><a href="{{ route('admin.mosques.index') }}" style="color:#cbd5e1;text-decoration:none;padding-left:18px;display:flex;align-items:center;gap:8px"><span style="width:14px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2c2 0 4 1.5 4 3.5S14 9 12 11 8 10 8 5.5 10 2 12 2z" stroke="#cbd5e1" stroke-width="1" fill="none"/></svg></span>Mosques</a></li>
+                <li data-key="facilities" style="margin-bottom:6px">
+                  <div style="color:#94a3b8;padding-left:18px;display:flex;align-items:center;gap:8px;cursor:not-allowed;">
+                    <span style="width:14px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="11" rx="1" stroke="#94a3b8" stroke-width="1" fill="none"/><path d="M8 7V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" stroke="#94a3b8" stroke-width="1" fill="none"/></svg></span>
+                    <span style="color:#94a3b8">Facilities <span style="margin-left:6px">🚧</span></span>
+                  </div>
+                </li>
               </ul>
             </li>
-            <li style="margin-bottom:8px" data-key="masjid"><a href="#" class="menu-link" style="color:#fff;text-decoration:none;padding:10px 12px;display:flex;align-items:center;gap:10px;border-radius:8px"><span style="width:18px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v6" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 11h16v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Masjid</a></li>
+            <li style="margin-bottom:8px" data-key="masjid">
+              <div style="color:#94a3b8;padding:10px 12px;display:flex;align-items:center;gap:10px;border-radius:8px;cursor:not-allowed">
+                <span style="width:18px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v6" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 11h16v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span>Masjid <span style="margin-left:6px">🚧</span></span>
+              </div>
+            </li>
             <!-- Mushalla menu removed -->
-            <li style="margin-bottom:8px" data-key="info"><a href="#" class="menu-link" style="color:#fff;text-decoration:none;padding:10px 12px;display:flex;align-items:center;gap:10px;border-radius:8px"><span style="width:18px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="#fff" stroke-width="1.5"/><path d="M7 8h10" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg></span>Info Terkini</a></li>
-            <li style="margin-bottom:8px" data-key="unduh"><a href="#" class="menu-link" style="color:#fff;text-decoration:none;padding:10px 12px;display:flex;align-items:center;gap:10px;border-radius:8px"><span style="width:18px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3v12" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><path d="M8 11l4 4 4-4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 21H3" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg></span>Unduh Data</a></li>
-            <li style="margin-bottom:8px" data-key="inbox"><a href="#" class="menu-link" style="color:#fff;text-decoration:none;padding:10px 12px;display:flex;align-items:center;gap:10px;border-radius:8px"><span style="width:18px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 8l9 6 9-6" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="4" width="18" height="16" rx="2" stroke="#fff" stroke-width="1.5"/></svg></span>Kotak Masuk</a></li>
+            <li style="margin-bottom:8px" data-key="info">
+              <div style="color:#94a3b8;padding:10px 12px;display:flex;align-items:center;gap:10px;border-radius:8px;cursor:not-allowed"><span style="width:18px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="#94a3b8" stroke-width="1.5"/><path d="M7 8h10" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/></svg></span>Info Terkini <span style="margin-left:6px">🚧</span></div>
+            </li>
+            <li style="margin-bottom:8px" data-key="unduh">
+              <div style="color:#94a3b8;padding:10px 12px;display:flex;align-items:center;gap:10px;border-radius:8px;cursor:not-allowed"><span style="width:18px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3v12" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/><path d="M8 11l4 4 4-4" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 21H3" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/></svg></span>Unduh Data <span style="margin-left:6px">🚧</span></div>
+            </li>
+            <li style="margin-bottom:8px" data-key="inbox">
+              <div style="color:#94a3b8;padding:10px 12px;display:flex;align-items:center;gap:10px;border-radius:8px;cursor:not-allowed"><span style="width:18px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 8l9 6 9-6" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="4" width="18" height="16" rx="2" stroke="#94a3b8" stroke-width="1.5"/></svg></span>Kotak Masuk <span style="margin-left:6px">🚧</span></div>
+            </li>
             <li style="margin-bottom:8px" data-key="userbkm"><a href="{{ route('admin.users') }}" class="menu-link" style="color:#fff;text-decoration:none;padding:10px 12px;display:flex;align-items:center;gap:10px;border-radius:8px"><span style="width:18px;display:inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10z" stroke="#fff" stroke-width="1.5"/><path d="M4 20v-1a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v1" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>User BKM</a></li>
           </ul>
         </nav>
@@ -53,7 +67,8 @@
         <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
           <div>
             <h1 style="margin:0; font-size:20px">Dashboard</h1>
-            <small style="color:#6b7280">Selamat datang, {{ Auth::user()->name }}</small>
+            <!-- show current page info when a menu is clicked -->
+            <div id="current-page-info" style="color:#6b7280; font-size:13px; margin-top:4px"></div>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             <!-- header toggle hidden because we now have an X button inside the sidebar -->
@@ -96,9 +111,11 @@
           .menu-link.active { background: linear-gradient(90deg,#ef4444 0,#f97316 100%); color: #fff !important; font-weight:600; box-shadow:0 6px 18px rgba(239,68,68,.12); }
           /* hide sidebar by sliding it left; width/padding will be handled by JS to restore exact original values */
           aside.sidebar-hidden { transform: translateX(-340px) !important; pointer-events: none; }
-          /* when nav is hidden and hamburger is visible, nudge the page title to the right so hamburger doesn't cover it */
-          /* adjust margin so title is clear (80px) */
-          .nav-hidden .main-content header h1 { margin-left: 80px; }
+          /* when nav is hidden and hamburger is visible, nudge the page content right so hamburger doesn't cover it */
+          /* tune padding to match 300px sidebar and hamburger width so content returns to normal when restored */
+          .nav-hidden .main-content { padding-left: 88px; }
+          .nav-hidden .main-content header { padding-left: 60px; }
+          .nav-hidden .main-content header h1 { margin-left: 0; }
           .summary-cards { display:flex; gap:12px; margin-bottom:18px; }
           .summary-card { background:#fff;padding:14px;border-radius:10px; box-shadow:0 8px 24px rgba(2,6,23,.04); flex:1; display:flex; flex-direction:column; }
           .summary-card.total { flex: .9; align-items:center; justify-content:center; }
@@ -218,6 +235,17 @@
         const sidebar = document.getElementById('sidebar');
         if(!sidebar) return;
 
+        // store original inline width/padding immediately so AJAX hide can restore them later
+        try{
+          if(!sidebar.dataset.origWidth) sidebar.dataset.origWidth = sidebar.style.width || getComputedStyle(sidebar).width || '300px';
+          if(!sidebar.dataset.origPadding) sidebar.dataset.origPadding = sidebar.style.padding || getComputedStyle(sidebar).padding || '20px';
+        }catch(e){}
+        // also store main-content original padding so we can fully restore layout (avoid residual offset)
+        try{
+          const main = document.querySelector('.main-content');
+          if(main && !main.dataset.origPadding) main.dataset.origPadding = main.style.paddingLeft || getComputedStyle(main).paddingLeft || '22px';
+        }catch(e){}
+
         function updateControls(){
           const hidden = sidebar.classList.contains('sidebar-hidden');
           // show hamburger when hidden, hide inner X; reverse when visible
@@ -238,24 +266,55 @@
             // collapse visually by setting inline width/padding to 0 and add class for transform/pointer-events
             try{ sidebar.style.width = '0px'; sidebar.style.padding = '0px'; }catch(e){}
             sidebar.classList.add('sidebar-hidden');
+            // nudge main content to compensate (also recorded earlier)
+            try{ const main = document.querySelector('.main-content'); if(main) main.style.paddingLeft = '88px'; }catch(e){}
           } else {
-            // remove class then restore inline width/padding (force deterministic values)
+            // remove class then restore inline width/padding from stored originals
             sidebar.classList.remove('sidebar-hidden');
-            try{ sidebar.style.width = '320px'; sidebar.style.padding = '20px'; }catch(e){}
+            try{
+              // restore inline width/padding exactly as recorded at init
+              sidebar.style.width = (sidebar.dataset.origWidth || '300px');
+              sidebar.style.padding = (sidebar.dataset.origPadding || '20px');
+              // clear any inline transform that might interfere
+              sidebar.style.transform = '';
+            }catch(e){}
+            // also remove any nav-hidden adjustments on the document so main content returns to normal
+            try{ document.documentElement.classList.remove('nav-hidden'); }catch(e){}
+            // restore main-content padding to original value so layout exactly returns to previous state
+            try{
+              const main = document.querySelector('.main-content');
+              if(main){
+                if(main.dataset.origPadding) main.style.paddingLeft = main.dataset.origPadding;
+                else main.style.paddingLeft = '22px';
+                // ensure flex layout can recompute properly
+                main.style.flex = main.style.flex || '1 1 auto';
+                main.style.width = '';
+                // force a layout reflow so the browser recalculates sizes
+                void main.offsetWidth;
+              }
+            }catch(e){}
           }
 
-          try{ localStorage.setItem('simas_sidebar_hidden', hidden ? '1' : '0'); }catch(e){}
+          // sidebar hidden preference persists disabled: keep sidebar always open
           updateControls();
-          // let the layout settle then ask Chart.js to resize the stacked bar so it fills the container
-          try{ setTimeout(()=>{ if(window.stackedBar && typeof window.stackedBar.resize === 'function') window.stackedBar.resize(); }, 260); }catch(e){}
+          // let the layout settle then trigger a resize/reflow so charts and maps recompute to the new width
+          try{
+            setTimeout(()=>{
+              // tell browser to recalc layout
+              void document.body.offsetWidth;
+              // dispatch a resize event for libraries that listen to it
+              window.dispatchEvent(new Event('resize'));
+              // Chart.js instances (if present) should be resized
+              if(window.stackedBar && typeof window.stackedBar.resize === 'function') window.stackedBar.resize();
+              if(window.pie1 && typeof window.pie1.resize === 'function') window.pie1.resize();
+              // Leaflet map, if present, needs invalidateSize
+              if(window.map && typeof window.map.invalidateSize === 'function') window.map.invalidateSize();
+            }, 260);
+          }catch(e){}
         }
 
-        // initialize from saved state
-        try{
-          const saved = localStorage.getItem('simas_sidebar_hidden');
-          if(saved === '1') setHidden(true);
-          else setHidden(false);
-        }catch(e){ updateControls(); }
+        // initialize: force sidebar to be visible (disable persisted hide)
+        try{ setHidden(false); }catch(e){ updateControls(); }
 
         if(innerBtn) innerBtn.addEventListener('click', function(e){
           e.stopPropagation();
@@ -273,6 +332,13 @@
           const hidden = sidebar.classList.contains('sidebar-hidden');
           setHidden(!hidden);
         });
+      })();
+
+      // AJAX page loader removed — navigation will use full page loads.
+      (function(){
+        // No-op: the previous SPA-like AJAX page loader was removed to keep navigation simple and to avoid
+        // dynamic content replacement when clicking sidebar items (notably Dashboard).
+        // Use regular links and full page navigation.
       })();
 
       // sidebar menu active handling (persist in localStorage) and submenu toggle
