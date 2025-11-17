@@ -7,10 +7,12 @@
     @endif
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-  <h2>Management User BKM</h2>
+      <div style="display:flex;align-items:center;gap:12px">
+        <h2 style="margin:0">Management User BKM</h2>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;margin-left:8px">Master · <a href="{{ route('dashboard') }}">Dashboard</a> / <strong>Management User BKM</strong></div>
+      </div>
       <div style="display:flex;gap:8px;align-items:center">
         <a href="{{ route('admin.users.create') }}" class="btn btn-sm btn-primary">Create User</a>
-        <a href="{{ route('dashboard') }}" class="btn btn-sm btn-outline-secondary">Kembali ke Dashboard</a>
       </div>
     </div>
 

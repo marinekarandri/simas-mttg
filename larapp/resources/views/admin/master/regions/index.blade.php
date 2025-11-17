@@ -1,9 +1,13 @@
 <x-admin.layout title="Master - Regions">
   <div class="p-4">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <h3>Regions</h3>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div>
+          <h3 style="margin:0">Regions</h3>
+          <div style="font-size:12px;color:#6b7280;margin-top:4px">Master · <a href="{{ route('dashboard') }}">Dashboard</a> / <strong>Regions</strong></div>
+        </div>
+      </div>
       <div style="display:flex;gap:8px;align-items:center">
-        <a href="{{ route('dashboard') }}" class="btn btn-sm btn-outline-secondary">Kembali ke Dashboard</a>
         <a href="{{ route('admin.regions.create') }}" class="btn btn-sm btn-primary">Create Region</a>
       </div>
     </div>
@@ -66,4 +70,11 @@
     {{ $regions->withQueryString()->links() }}
   </div>
   </div>
+
+  @push('scripts')
+    <script>
+      // keyboard shortcut: Alt+Shift+D to go back to dashboard
+      (function(){ document.addEventListener('keydown', function(e){ if(e.altKey && e.shiftKey && String(e.key).toLowerCase() === 'd'){ window.location = '{{ route("dashboard") }}'; } }); })();
+    </script>
+  @endpush
 </x-admin.layout>

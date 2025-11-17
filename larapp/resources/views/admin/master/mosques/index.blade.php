@@ -1,10 +1,12 @@
 <x-admin.layout title="Mosques">
   <div class="p-4">
     <div class="flex justify-between items-center mb-4">
-      <div class="flex items-center gap-3">
-        <a href="{{ route('dashboard') }}" class="btn btn-ghost btn-sm" title="Back to dashboard">&larr; Dashboard</a>
-        <h3 class="m-0">Mosques</h3>
-      </div>
+        <div class="flex items-center gap-3">
+          <div>
+            <h3 class="m-0">Mosques</h3>
+            <div style="font-size:12px;color:#6b7280;margin-top:4px">Master · <a href="{{ route('dashboard') }}">Dashboard</a> / <strong>Mosques</strong></div>
+          </div>
+        </div>
       <a href="{{ route('admin.mosques.create') }}" class="btn btn-primary">Create Mosque</a>
     </div>
 
@@ -18,8 +20,7 @@
           <th>Area</th>
           <th>Witel</th>
           <th>STO</th>
-          <th>Tahun</th>
-          <th>BKM</th>
+          <th>Completion</th>
           <th>Capacity</th>
           <th style="width:180px">Actions</th>
         </tr>
@@ -34,16 +35,43 @@
             <td>{{ $m->area?->name }}</td>
             <td>{{ $m->witel?->name }}</td>
             <td>{{ $m->sto?->name }}</td>
-            <td>{{ $m->tahun_didirikan ?? '-' }}</td>
-            <td>{{ $m->jml_bkm ?? 0 }}</td>
+            @php
+              $pct = intval($m->completion_percentage ?? 0);
+              if($pct < 25) { $pctClass = 'low'; }
+              elseif($pct < 75) { $pctClass = 'mid'; }
+              else { $pctClass = 'high'; }
+            @endphp
+            <td style="min-width:200px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="completion-bar" style="flex:1;max-width:220px;--pct: {{ $pct }};">
+                  <div class="completion-fill {{ $pctClass }}" style="width:calc(var(--pct) * 1%);"></div>
+                </div>
+                <div style="width:48px;text-align:right;font-size:12px;color:#374151">{{ $pct }}%</div>
+              </div>
+            </td>
             <td>{{ $m->daya_tampung ?? '-' }}</td>
             <td style="display:flex;gap:8px;align-items:center;justify-content:flex-end">
+              {{-- Detail (chevron) button moved to the leftmost of actions --}}
+              <button type="button" class="btn btn-sm btn-outline-secondary toggle-detail" data-id="{{ $m->id }}" title="Show details">
+                <!-- chevron down icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 7l5 5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+
+              {{-- Coordinate button immediately to the right of detail arrow --}}
+              <button type="button" class="btn btn-sm btn-secondary btn-view-map" data-id="{{ $m->id }}" title="View map" style="margin-left:6px">
+                <!-- map pin icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+
               @can('update', $m)
-                <a href="{{ route('admin.mosques.edit', $m->id) }}" class="btn btn-sm">Edit</a>
+                {{-- Edit as a colored primary button --}}
+                <a href="{{ route('admin.mosques.edit', $m->id) }}" class="btn btn-sm btn-primary" style="margin-left:6px">Edit</a>
+                <button type="button" class="btn btn-sm btn-info btn-manage-facilities" data-id="{{ $m->id }}" style="margin-left:6px">Facilities</button>
               @else
-                <button class="btn btn-sm" disabled title="You don't have permission to edit">Edit</button>
+                <button class="btn btn-sm" disabled title="You don't have permission to edit" style="margin-left:6px">Edit</button>
               @endcan
-              <form action="{{ route('admin.mosques.destroy', $m->id) }}" method="POST" style="display:inline">
+
+              <form action="{{ route('admin.mosques.destroy', $m->id) }}" method="POST" style="display:inline;margin-left:6px">
                 @csrf
                 @method('DELETE')
                 @can('delete', $m)
@@ -52,14 +80,6 @@
                   <button class="btn btn-danger btn-sm" disabled title="You don't have permission to delete">Delete</button>
                 @endcan
               </form>
-              <button type="button" class="btn btn-sm btn-secondary btn-view-map" data-id="{{ $m->id }}" title="View map" style="margin-left:6px">
-                <!-- map pin icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </button>
-              <button type="button" class="btn btn-sm btn-outline-secondary toggle-detail" data-id="{{ $m->id }}" title="Show details" style="margin-left:6px">
-                <!-- chevron down icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 7l5 5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </button>
             </td>
           </tr>
 
@@ -138,6 +158,45 @@
     </div>
   </div>
 
+  <!-- Facilities manager modal -->
+  <div class="modal fade" id="facilitiesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Manage Facilities for <span id="facilities-modal-mosque-name"></span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="facilities-list" style="display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow:auto"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="facilities-save">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mosque-facility photo manager modal -->
+  <div class="modal fade" id="facilityPhotosModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Photos for <span id="photos-modal-facility-name"></span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="facility-photos-list" style="display:flex;flex-wrap:wrap;gap:12px"></div>
+          <div style="margin-top:12px">
+            <input type="file" id="facility-photos-input" multiple accept="image/*" />
+            <div id="facility-photos-captions" style="margin-top:8px"></div>
+            <button class="btn btn-sm btn-primary" id="facility-photos-upload" style="margin-top:8px">Upload</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="mosques-data" data-mosques="{{ base64_encode(json_encode($mosques->items())) }}" style="display:none"></div>
 
   @push('head')
@@ -151,12 +210,21 @@
   .detail-photos{ box-sizing: border-box; }
   .detail-map{ box-sizing: border-box; }
       @media (max-width:768px){ .detail-columns{ flex-direction:column } .detail-photos, .detail-map{ width:100% !important } }
+      /* Completion progress bar styles */
+      .completion-bar{ background:#e6e6e6; border-radius:6px; height:12px; overflow:hidden; }
+      .completion-fill{ height:100%; width:0; transition: width 360ms ease; border-radius:6px 0 0 6px; }
+      .completion-fill.low{ background:#ef4444; } /* red */
+      .completion-fill.mid{ background:#f59e0b; } /* amber */
+      .completion-fill.high{ background:#10b981; } /* green */
     </style>
   @endpush
 
   @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // keyboard shortcut: Alt+Shift+D to go back to dashboard
+        (function(){ document.addEventListener('keydown', function(e){ if(e.altKey && e.shiftKey && String(e.key).toLowerCase() === 'd'){ window.location = '{{ route("dashboard") }}'; } }); })();
+
       (function(){
         var decoded = [];
         try{
@@ -168,6 +236,176 @@
         function findMosque(id){
           return decoded.find(function(x){ return String(x.id) === String(id); }) || null;
         }
+        // Facilities manager logic (moved out of detail-toggle so Facilities button works without opening details)
+        (function(){
+          const facilitiesModal = document.getElementById('facilitiesModal');
+          const facilitiesList = document.getElementById('facilities-list');
+          const facilitiesSaveBtn = document.getElementById('facilities-save');
+          const facilitiesModalName = document.getElementById('facilities-modal-mosque-name');
+          const photosModal = document.getElementById('facilityPhotosModal');
+          const photosList = document.getElementById('facility-photos-list');
+          const photosModalName = document.getElementById('photos-modal-facility-name');
+          const photosInput = document.getElementById('facility-photos-input');
+          const photosUploadBtn = document.getElementById('facility-photos-upload');
+          let currentMosqueId = null;
+          let currentFacilityId = null;
+
+          function getCsrf(){ const m = document.querySelector('meta[name="csrf-token"]'); return m ? m.getAttribute('content') : '' }
+
+          async function openFacilities(mosqueId){
+            currentMosqueId = mosqueId;
+            const res = await fetch('/admin/mosques/'+mosqueId+'/facilities', { credentials:'same-origin' });
+            const json = await res.json();
+            facilitiesList.innerHTML = '';
+            if(!json.success) return;
+            // set modal title
+            const mosque = findMosque(mosqueId);
+            facilitiesModalName.innerText = mosque ? mosque.name : ('#'+mosqueId);
+
+            json.facilities.forEach(f => {
+              const wrap = document.createElement('div'); wrap.style.borderBottom='1px solid #eee'; wrap.style.padding='8px 0';
+              const top = document.createElement('div'); top.style.display='flex'; top.style.gap='12px'; top.style.alignItems='center';
+              const chk = document.createElement('input'); chk.type='checkbox'; chk.checked = f.assignment ? !!f.assignment.is_available : false; chk.dataset.fid = f.id;
+              const name = document.createElement('div'); name.style.flex='1'; name.innerHTML = `<strong>${f.name}</strong>${f.is_required?'<span style="color:#f59e0b;margin-left:8px;font-size:12px">required</span>':''}`;
+              name.style.cursor = 'pointer';
+              const qty = document.createElement('input'); qty.type='number'; qty.placeholder='qty'; qty.style.width='100px'; qty.value = f.assignment && f.assignment.quantity ? f.assignment.quantity : '';
+              qty.setAttribute('min','0'); qty.setAttribute('step','1');
+              qty.addEventListener('input', function(){
+                this.value = this.value.replace(/[^0-9]/g,'');
+                try{ chk.checked = Number(this.value) > 0; }catch(e){}
+              });
+              const unit = document.createElement('div'); unit.innerText = f.unit ? f.unit.name : '';
+              const note = document.createElement('input'); note.type='text'; note.placeholder='note'; note.style.width='220px'; note.value = f.assignment && f.assignment.note ? f.assignment.note : '';
+              const expandToggle = document.createElement('button'); expandToggle.className='btn btn-sm btn-outline-secondary'; expandToggle.innerText='Collapse';
+              top.appendChild(chk); top.appendChild(name); top.appendChild(qty); top.appendChild(unit); top.appendChild(note); top.appendChild(expandToggle);
+              // if quantity already present, mark checkbox as checked
+              try{ chk.checked = Number(qty.value) > 0; }catch(e){}
+
+              const dropArea = document.createElement('div'); dropArea.style.display='block'; dropArea.style.marginTop='8px'; dropArea.style.border='1px dashed #d1d5db'; dropArea.style.padding='12px'; dropArea.style.borderRadius='8px';
+              dropArea.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="color:#6b7280">Drag & drop JPG images here or <button type=\"button\" class=\"btn btn-link btn-browse\" style=\"padding:0\">browse</button></div><div style=\"font-size:12px;color:#9ca3af\">.jpg/.jpeg only — recommended max 5MB</div></div><input type=\"file\" accept=\"image/jpeg,image/jpg\" multiple style=\"display:none\" class=\"facility-photos-input\" /> <div class=\"facility-photo-previews\" style=\"display:flex;gap:12px;flex-wrap:wrap;margin-top:8px\"></div>`;
+
+              const fileInput = dropArea.querySelector('.facility-photos-input');
+              const browseBtn = dropArea.querySelector('.btn-browse');
+              const previews = dropArea.querySelector('.facility-photo-previews');
+              const filesArr = [];
+
+              function createExistingPreview(p){
+                const el = document.createElement('div'); el.style.width='160px'; el.style.display='flex'; el.style.flexDirection='column'; el.style.gap='6px';
+                const img = document.createElement('img'); img.src = p.path; img.style.width='160px'; img.style.height='110px'; img.style.objectFit='cover'; img.style.borderRadius='6px'; img.style.border='1px solid #e6e6e6';
+                const caption = document.createElement('input'); caption.type='text'; caption.placeholder='Caption (optional)'; caption.className='form-input'; caption.style.fontSize='12px'; caption.value = p.caption || '';
+                const remove = document.createElement('button'); remove.type='button'; remove.className='btn btn-sm btn-outline-danger'; remove.innerText='Delete';
+                el.appendChild(img); el.appendChild(caption); el.appendChild(remove);
+                // on caption change (blur), PATCH caption
+                caption.addEventListener('blur', async function(){
+                  try{
+                    await fetch('/admin/mosque-facility-photos/'+p.id, { method: 'PATCH', credentials: 'same-origin', headers: { 'Content-Type':'application/json', 'X-CSRF-TOKEN': getCsrf() }, body: JSON.stringify({ caption: caption.value }) });
+                  }catch(err){ console.warn('caption update failed', err); }
+                });
+                remove.addEventListener('click', async function(){ if(!confirm('Delete this photo?')) return; try{ const dres = await fetch('/admin/mosque-facility-photos/'+p.id, { method: 'DELETE', credentials:'same-origin', headers: {'X-CSRF-TOKEN': getCsrf()} }); const dj = await dres.json(); if(dj.success) el.remove(); }catch(err){ console.warn('delete photo', err); } });
+                return el;
+              }
+
+              function createPreview(file){
+                const el = document.createElement('div'); el.style.width='160px'; el.style.display='flex'; el.style.flexDirection='column'; el.style.gap='6px';
+                const img = document.createElement('img'); img.style.width='160px'; img.style.height='110px'; img.style.objectFit='cover'; img.style.borderRadius='6px'; img.style.border='1px solid #e6e6e6';
+                const caption = document.createElement('input'); caption.type='text'; caption.placeholder='Caption (optional)'; caption.className='form-input'; caption.style.fontSize='12px';
+                const remove = document.createElement('button'); remove.type='button'; remove.className='btn btn-sm btn-outline-danger'; remove.innerText='Remove';
+                el.appendChild(img); el.appendChild(caption); el.appendChild(remove);
+                const reader = new FileReader(); reader.onload = function(ev){ img.src = ev.target.result; }; reader.readAsDataURL(file);
+                remove.addEventListener('click', function(){ const i = filesArr.indexOf(file); if(i>-1) filesArr.splice(i,1); el.remove(); });
+                return {node: el, file: file, captionEl: caption};
+              }
+
+              function addFiles(fileList){ Array.from(fileList).forEach(function(f){ const nameLower = (f.name||'').toLowerCase(); if(!(f.type === 'image/jpeg' || nameLower.endsWith('.jpg') || nameLower.endsWith('.jpeg'))){ alert('Only JPG images allowed: '+f.name); return; } filesArr.push(f); const pv = createPreview(f); previews.appendChild(pv.node); }); }
+
+              dropArea.addEventListener('dragover', function(e){ e.preventDefault(); dropArea.style.background='#fbfbfb'; });
+              dropArea.addEventListener('dragleave', function(e){ dropArea.style.background=''; });
+              dropArea.addEventListener('drop', function(e){ e.preventDefault(); dropArea.style.background=''; if(e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files); });
+              browseBtn.addEventListener('click', function(){ fileInput.click(); });
+              fileInput.addEventListener('change', function(ev){ if(ev.target.files) addFiles(ev.target.files); ev.target.value=''; });
+
+              // load existing photos for this mosque+facility and render in previews
+              (async function(){
+                try{
+                  const resp = await fetch('/admin/mosques/'+mosqueId+'/facilities/'+f.id+'/photos', { credentials:'same-origin' });
+                  const pj = await resp.json();
+                  if(pj.success && Array.isArray(pj.photos)){
+                    pj.photos.forEach(function(p){ const node = createExistingPreview(p); previews.appendChild(node); });
+                  }
+                }catch(e){ console.warn('load existing facility photos', e); }
+              })();
+
+              expandToggle.addEventListener('click', function(){ if(dropArea.style.display==='none'){ dropArea.style.display='block'; expandToggle.innerText='Collapse'; } else { dropArea.style.display='none'; expandToggle.innerText='Expand'; } });
+
+              wrap.appendChild(top); wrap.appendChild(dropArea);
+
+              wrap.__data = { fid: f.id, checkbox: chk, qty: qty, unit: null, note: note, filesArr: filesArr, getCaptions: function(){ return Array.from(previews.querySelectorAll('input[type="text"]')).map(i=>i.value); } };
+              facilitiesList.appendChild(wrap);
+            });
+            const bs = new bootstrap.Modal(facilitiesModal); bs.show();
+          }
+
+          facilitiesSaveBtn.addEventListener('click', async function(){
+            const payload = { facilities: {} };
+            Array.from(facilitiesList.children).forEach(div => {
+              const d = div.__data; if(!d) return;
+              payload.facilities[d.fid] = { is_available: d.checkbox.checked ? 1 : 0, quantity: d.qty.value || null, note: d.note.value || null };
+            });
+            try{
+              const res = await fetch('/admin/mosques/'+currentMosqueId+'/facilities', { method: 'POST', credentials:'same-origin', headers: { 'Content-Type':'application/json', 'X-CSRF-TOKEN': getCsrf() }, body: JSON.stringify(payload) });
+              const j = await res.json(); if(!j.success){ alert('Save failed'); return; }
+              // then upload photos per-facility if any
+              for(const div of Array.from(facilitiesList.children)){
+                const d = div.__data; if(!d) continue;
+                if(d.filesArr && d.filesArr.length){
+                  const fd = new FormData();
+                  d.filesArr.forEach(f=> fd.append('photos[]', f));
+                  const caps = d.getCaptions(); caps.forEach((c, idx)=> fd.append('captions['+idx+']', c));
+                  try{
+                    const pres = await fetch('/admin/mosques/'+currentMosqueId+'/facilities/'+d.fid+'/photos', { method:'POST', body: fd, headers: { 'X-CSRF-TOKEN': getCsrf() }, credentials:'same-origin' });
+                    const pj = await pres.json(); if(!pj.success){ console.warn('photo upload failed for facility', d.fid, pj); }
+                  }catch(err){ console.warn('photo upload error', err); }
+                }
+              }
+              // refresh to reflect new completion and photos
+              location.reload();
+            }catch(e){ console.warn(e); alert('Save failed'); }
+          });
+
+          // open photos modal
+          async function openPhotosModal(mosqueId, facilityId, facilityName){
+            currentFacilityId = facilityId; currentMosqueId = mosqueId;
+            photosModalName.innerText = facilityName;
+            photosList.innerHTML = '';
+            // fetch existing
+            try{
+              const res = await fetch('/admin/mosques/'+mosqueId+'/facilities/'+facilityId+'/photos', { credentials:'same-origin' });
+              const j = await res.json(); if(j.success && Array.isArray(j.photos)){
+                j.photos.forEach(p => {
+                  const el = document.createElement('div'); el.style.width='180px'; el.style.display='flex'; el.style.flexDirection='column'; el.style.gap='6px';
+                  const img = document.createElement('img'); img.src = p.path; img.style.width='180px'; img.style.height='120px'; img.style.objectFit='cover';
+                  const cap = document.createElement('div'); cap.style.fontSize='12px'; cap.innerText = p.caption || '';
+                  const del = document.createElement('button'); del.className='btn btn-sm btn-outline-danger'; del.innerText='Delete'; del.addEventListener('click', async function(){ if(!confirm('Delete photo?')) return; const dres = await fetch('/admin/mosque-facility-photos/'+p.id, { method:'DELETE', headers: {'X-CSRF-TOKEN':getCsrf()}, credentials:'same-origin' }); const dj = await dres.json(); if(dj.success) el.remove(); });
+                  el.appendChild(img); el.appendChild(cap); el.appendChild(del); photosList.appendChild(el);
+                });
+              }
+            }catch(e){ console.warn('load photos', e); }
+            const bs = new bootstrap.Modal(photosModal); bs.show();
+          }
+
+          photosUploadBtn.addEventListener('click', async function(){
+            if(!photosInput.files || !photosInput.files.length) return alert('No files');
+            const fd = new FormData(); Array.from(photosInput.files).forEach(f => fd.append('photos[]', f));
+            // captions input not implemented per-file here for brevity
+            try{
+              const res = await fetch('/admin/mosques/'+currentMosqueId+'/facilities/'+currentFacilityId+'/photos', { method:'POST', body: fd, headers: { 'X-CSRF-TOKEN': getCsrf() }, credentials:'same-origin' });
+              const j = await res.json(); if(j.success){ alert('Uploaded'); location.reload(); } else { alert('Upload failed'); }
+            }catch(e){ console.warn(e); alert('Upload failed'); }
+          });
+
+          // delegate click for facilities buttons on table
+          document.addEventListener('click', function(e){ const btn = e.target.closest && e.target.closest('.btn-manage-facilities'); if(!btn) return; const id = btn.getAttribute('data-id'); openFacilities(id); });
+        })();
 
         // handle detail toggle with slide animation and initialize map on first open
         var iconDown = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 7l5 5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -190,6 +428,8 @@
               collapse.classList.add('open');
               collapse.style.maxHeight = collapse.scrollHeight + 'px';
             });
+
+            
             btn.innerHTML = iconUp;
             // initialize map when present
             var mapEl = document.getElementById('map-detail-' + id);
