@@ -9,6 +9,7 @@ class Activity extends Model
     protected $fillable = [
         'activity_name',
         'created_by',
+        'category',
     ];
 
     public function mosques()

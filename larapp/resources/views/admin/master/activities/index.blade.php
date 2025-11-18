@@ -16,13 +16,14 @@
     @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
     <table class="table table-sm">
       <thead>
-        <tr><th>#</th><th>Name</th><th>Slug</th><th>Actions</th></tr>
+        <tr><th>#</th><th>Name</th><th>Category</th><th>Slug</th><th>Actions</th></tr>
       </thead>
       <tbody>
         @foreach($items as $it)
         <tr>
           <td>{{ $it->id }}</td>
           <td>{{ $it->activity_name }}</td>
+          <td>{{ $it->category === 'mahdhah' ? 'Mahdhah' : 'Ghairu Mahdhah' }}</td>
           <td>{{ $it->slug ?? '-' }}</td>
           <td>
             <a href="{{ route('admin.activities.edit', $it->id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>

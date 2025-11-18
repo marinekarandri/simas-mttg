@@ -27,6 +27,7 @@ class ActivityController extends Controller
         $data = $request->validate([
             'activity_name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255',
+            'category' => 'required|in:mahdhah,ghairu_mahdhah',
         ]);
         Activity::create($data + ['created_by' => auth()->id()]);
         return redirect()->route('admin.activities.index')->with('success', 'Activity created');
@@ -42,6 +43,7 @@ class ActivityController extends Controller
         $data = $request->validate([
             'activity_name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255',
+            'category' => 'required|in:mahdhah,ghairu_mahdhah',
         ]);
         $activity->update($data);
         return redirect()->route('admin.activities.index')->with('success', 'Activity updated');
