@@ -13,6 +13,8 @@ class Mosque extends Model
         'tahun_didirikan', 'jml_bkm', 'luas_tanah', 'daya_tampung',
         'latitude', 'longitude', 'image_url',
         'description', 'completion_percentage',
+        // new fields
+        'witel_new', 'subsidiary_id',
         'is_active',
     ];
 
@@ -53,6 +55,18 @@ class Mosque extends Model
     public function mosqueFacility()
     {
         return $this->hasMany(MosqueFacility::class);
+    }
+
+    public function subsidiary()
+    {
+        return $this->belongsTo(Subsidiary::class, 'subsidiary_id');
+    }
+
+    public function activities()
+    {
+        return $this->belongsToMany(Activity::class, 'activity_mosque')
+            ->withPivot(['note'])
+            ->withTimestamps();
     }
 
     public function facility()
