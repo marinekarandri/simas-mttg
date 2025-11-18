@@ -2,6 +2,8 @@
 	const input = document.getElementById('searchInput');
 	const box = document.getElementById('autocomplete');
 	let controller; let lastQuery=''; let hideTimeout;
+	let lastSuggestions = [];
+	let selectedId = null;
 	function fetchSuggestions(q){
 		if(!q || q.length < 2){ box.classList.add('d-none'); box.innerHTML=''; return; }
 		if(controller){ controller.abort(); }
@@ -11,22 +13,37 @@
 			.then(data=>{
 				if(input.value !== q) return; // stale
 				if(!data.length){ box.innerHTML = `<div class='autocomplete-empty'>Tidak ada saran</div>`; box.classList.remove('d-none'); return; }
-				box.innerHTML = data.map(item=>`<div class='autocomplete-item' data-name="${item.name.replace(/&/g,'&amp;').replace(/</g,'&lt;')}"><span>${item.name}</span><small>${item.type||''}</small></div>`).join('');
+				lastSuggestions = data || [];
+				box.innerHTML = data.map(item=>{
+					const city = item.city ? String(item.city).replace(/&/g,'&amp;').replace(/</g,'&lt;') : '';
+					const name = item.name ? String(item.name).replace(/&/g,'&amp;').replace(/</g,'&lt;') : '';
+					const type = item.type ? String(item.type).replace(/&/g,'&amp;').replace(/</g,'&lt;') : '';
+					const display = `${name}`;
+					return `<div class='autocomplete-item' data-id="${item.id}" data-name="${name}"><span>${display}</span><small>${city} | ${type}</small></div>`;
+				}).join('');
 				box.classList.remove('d-none');
 			})
 			.catch(()=>{ box.innerHTML = `<div class='autocomplete-empty'>Tidak ada saran</div>`; box.classList.remove('d-none'); });
 	}
 	input.addEventListener('input', e=>{
 		const q = e.target.value.trim();
+		// user typed after selecting suggestion -> clear selectedId
+		if(selectedId) selectedId = null;
 		if(q===lastQuery) return; lastQuery=q; fetchSuggestions(q);
 	});
 	input.addEventListener('focus', ()=>{ if(input.value.trim().length>=2) fetchSuggestions(input.value.trim()); });
 	box.addEventListener('click', e=>{
 		const item = e.target.closest('.autocomplete-item');
-		if(!item) return; input.value = item.getAttribute('data-name'); box.classList.add('d-none'); box.innerHTML=''; submitDynamic();
+		if(!item) return;
+		const id = item.getAttribute('data-id');
+		const name = item.getAttribute('data-name');
+		// Fill input and remember selected id; do NOT redirect yet.
+		input.value = name || '';
+		selectedId = (id || id === '0') ? id : null;
+		box.classList.add('d-none'); box.innerHTML='';
 	});
 
-	document.getElementById('searchForm').addEventListener('submit', function(ev){ if(input.value.trim()===''){ ev.preventDefault(); } });
+	document.getElementById('searchForm').addEventListener('submit', function(ev){ ev.preventDefault(); if(input.value.trim()===''){ return; } submitDynamic(); });
 	document.addEventListener('click', e=>{
 		if(e.target===input || box.contains(e.target)) return; box.classList.add('d-none');
 	});
@@ -110,6 +127,41 @@
 		if(sourceEl){ sourceEl.textContent = 'N/A'; sourceEl.className='prayer-source-badge fallback'; }
 	}
 	loadPrayerTimes();
+
+	// Attempt to resolve a search query to a masjid id and redirect
+	async function submitDynamic(){
+		const q = input.value ? input.value.trim() : '';
+		if(!q) return;
+		// If user previously selected a suggestion, use its id
+		if(selectedId){
+			window.location.href = `/masjid/${selectedId}`;
+			return;
+		}
+		// try exact match from last fetched suggestions
+		if(Array.isArray(lastSuggestions) && lastSuggestions.length){
+			const match = lastSuggestions.find(s => (s.name||'').toLowerCase() === q.toLowerCase());
+			if(match && (match.id || match.id === 0)){
+				window.location.href = `/masjid/${match.id}`;
+				return;
+			}
+		}
+		// otherwise, query suggestions endpoint live and use first result if any
+		try{
+			const res = await fetch(`search/suggestions?q=${encodeURIComponent(q)}`);
+			if(res.ok){
+				const data = await res.json();
+				if(Array.isArray(data) && data.length){
+					const first = data[0];
+					if(first && (first.id || first.id === 0)){
+						window.location.href = `/masjid/${first.id}`;
+						return;
+					}
+				}
+			}
+		}catch(e){ /* ignore */ }
+		// fallback: go to standard search results page
+		window.location.href = `/search?q=${encodeURIComponent(q)}`;
+	}
 
 	// --- Dynamic Facilities Overview ---
 	const provinceSel = document.getElementById('filterProvince');
@@ -199,12 +251,14 @@
 	// --- Map & Filters ---
 	// Map container may be named 'map' (dashboard view) or 'mainMap' (frontend).
 	const mapContainerId = document.getElementById('mainMap') ? 'mainMap' : (document.getElementById('map') ? 'map' : null);
+	// expose map variable to outer scope so marker functions can use it
+	let map = null;
 	if(mapContainerId){
 		function initMap(){
 			if(typeof L === 'undefined') return; // should not happen
-			const map = L.map(mapContainerId).setView([-7.25,112.75],7);
+			map = L.map(mapContainerId).setView([-7.25,112.75],7);
 			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
-			L.marker([-7.25,112.75]).addTo(map).bindPopup('Lokasi contoh: Jawa Timur').openPopup();
+			// example marker removed to avoid placeholder popup
 			return map;
 		}
 
@@ -227,29 +281,9 @@
 		// no map on this page — skip map initialization
 	}
 
-	// --- Map filter controls: toggle & reset ---
-	const mapFilterCard = document.getElementById('mapFilterCard');
-	const mapFilterToggle = document.getElementById('mapFilterToggle');
+	// --- Map filter reset control ---
 	const mapFilterReset = document.getElementById('mapFilterReset');
-
-
-	if(mapFilterToggle){
-		mapFilterToggle.addEventListener('click', function(){
-			const left = document.querySelector('.map-left');
-			const right = document.querySelector('.map-right');
-			if(!left || !right) return;
-			if(left.style.display === 'none'){
-				left.style.display = '';
-				right.style.flex = '1 1 70%';
-			} else {
-				left.style.display = 'none';
-				right.style.flex = '1 1 100%';
-			}
-			// let map invalidate size after layout change if Leaflet is present
-			setTimeout(()=>{ if(window.L && window.L.map) try{ const mm = window.L.map(document.getElementById('mainMap') ? 'mainMap' : 'map'); mm.invalidateSize(); }catch(e){} }, 300);
-		});
-	}
-
+	// Note: map filter toggle removed — filter stays visible always.
 	if(mapFilterReset){
 		mapFilterReset.addEventListener('click', function(){
 			// reset selects/inputs in the form
@@ -290,7 +324,8 @@
 		}catch(e){ resetSelect(provinceSelect,'Gagal memuat'); }
 	}
 
-	provinceSelect.addEventListener('change', async e=>{
+	if(provinceSelect){
+		provinceSelect.addEventListener('change', async e=>{
 		const id = e.target.value;
 		resetSelect(citySelect,'Pilih Kota / Kabupaten');
 		resetSelect(witelSelect,'Pilih Witel');
@@ -303,9 +338,11 @@
 			if(cities.length){ enableSelect(citySelect); cities.forEach(c=>{ const opt=document.createElement('option'); opt.value=c.id; opt.textContent=c.name; citySelect.appendChild(opt); }); }
 			else{ disableSelect(citySelect); }
 		}catch{ disableSelect(citySelect); }
-	});
+		});
+	}
 
-	citySelect.addEventListener('change', async e=>{
+	if(citySelect){
+		citySelect.addEventListener('change', async e=>{
 		const id = e.target.value;
 		resetSelect(witelSelect,'Pilih Witel');
 		if(!id){ disableSelect(witelSelect); return; }
@@ -316,7 +353,8 @@
 			if(witels.length){ enableSelect(witelSelect); witels.forEach(w=>{ const opt=document.createElement('option'); opt.value=w.id; opt.textContent=w.name; witelSelect.appendChild(opt); }); }
 			else{ disableSelect(witelSelect); }
 		}catch{ disableSelect(witelSelect); }
-	});
+		});
+	}
 
 	const mapStatusEl = document.getElementById('mapStatus');
 	function showMapStatus(msg, type='info'){
@@ -331,11 +369,11 @@
 
 	async function fetchMarkers(extraParams={}){
 		const params = new URLSearchParams();
-		if(provinceSelect.value) params.append('province_id', provinceSelect.value);
-		if(citySelect.value) params.append('city_id', citySelect.value);
-		if(witelSelect.value) params.append('witel_id', witelSelect.value);
-		if(typeSelect.value) params.append('type', typeSelect.value);
-		if(queryInput.value.trim()) params.append('search', queryInput.value.trim()); // gunakan "search" sesuai API
+		if(provinceSelect && provinceSelect.value) params.append('province_id', provinceSelect.value);
+		if(citySelect && citySelect.value) params.append('city_id', citySelect.value);
+		if(witelSelect && witelSelect.value) params.append('witel_id', witelSelect.value);
+		if(typeSelect && typeSelect.value) params.append('type', typeSelect.value);
+		if(queryInput && queryInput.value && queryInput.value.trim()) params.append('search', queryInput.value.trim()); // gunakan "search" sesuai API
 		Object.entries(extraParams).forEach(([k,v])=>{ if(v!==undefined&&v!==null&&v!=='') params.set(k,v); });
 		showMapStatus('Memuat lokasi...');
 		try{
@@ -350,17 +388,38 @@
 		}
 	}
 
-	filterForm.addEventListener('submit', async e=>{
-		e.preventDefault();
-		fetchMarkers();
-	});
+	if(filterForm){
+		filterForm.addEventListener('submit', async e=>{
+			e.preventDefault();
+			fetchMarkers();
+		});
+	}
 
-	let markersLayer = L.layerGroup().addTo(map);
+	// markersLayer is created only when Leaflet map is available
+	let markersLayer = null;
 	function addMarkers(items){
+		if(!map || typeof L === 'undefined') return; // can't add markers without map
+		if(!markersLayer) markersLayer = L.layerGroup().addTo(map);
 		markersLayer.clearLayers();
+
+		// prepare icons (cached)
+		if(!window.__simas_icons){
+			const base = window.location && window.location.origin ? window.location.origin : '';
+			window.__simas_icons = {
+				masjid: L.icon({ iconUrl: base + '/images/mosque-map-icon.png', iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -30] }),
+				musholla: L.icon({ iconUrl: base + '/images/mushalla-map-icon.png', iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -30] }),
+				default: L.icon({ iconUrl: base + '/images/mosque.png', iconSize: [34,34], iconAnchor: [17,34], popupAnchor: [0,-30] })
+			};
+		}
+
 		items.forEach(m=>{
 			if(!m.latitude || !m.longitude) return;
-			const marker = L.marker([m.latitude, m.longitude]);
+			const lat = parseFloat(m.latitude);
+			const lng = parseFloat(m.longitude);
+			if(Number.isNaN(lat) || Number.isNaN(lng)) return;
+			const t = (m.type||'').toUpperCase();
+			const icon = t === 'MUSHOLLA' ? window.__simas_icons.musholla : (t === 'MASJID' ? window.__simas_icons.masjid : window.__simas_icons.default);
+			const marker = L.marker([lat, lng], { icon });
 			marker.bindPopup(`<strong>${m.name}</strong><br><small>${m.address||''}</small>`);
 			markersLayer.addLayer(marker);
 		});
