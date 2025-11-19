@@ -82,4 +82,12 @@ Route::get('/masjid', function () {
 	return view('home.mosque.index');
 })->name('masjid');
 
+// Contact form submit
+Route::get('/contact', function () {
+	return view('home.contact.index');
+})->name('contact');
+
+
+Route::post('/contact', [App\Http\Controllers\ContactController::class, 'store'])->name('contact.store');
+
 
